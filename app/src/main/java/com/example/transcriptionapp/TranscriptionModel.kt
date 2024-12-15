@@ -1,7 +1,6 @@
 package com.example.transcriptionapp
 
-import android.content.Context
-import android.net.Uri
+
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -26,7 +25,7 @@ interface OpenAIService {
 
 object OpenAIClient {
     private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+        .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC))
         .addInterceptor(Interceptor { chain ->
             val request = chain.request().newBuilder()
                 .addHeader("Authorization", "Bearer ***REMOVED***") // Replace with your API key

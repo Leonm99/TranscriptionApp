@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.convert.gson)
     implementation(libs.okhttp)
     implementation(libs.logging.inceptor)
+    implementation(libs.androidx.material3.window.size.android)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
