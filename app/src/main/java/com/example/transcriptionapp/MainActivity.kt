@@ -13,24 +13,17 @@ import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel by viewModels<TranscriptionViewModel>()
+  private val viewModel by viewModels<TranscriptionViewModel>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            TranscriptionAppTheme {
-                TranscriptionScreen(viewModel)
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    enableEdgeToEdge()
+    setContent { TranscriptionAppTheme { TranscriptionScreen(viewModel) } }
+  }
 
-            }
-        }
-    }
-
-    @Preview(showBackground = true)    @Composable
-    fun AppPreview() {
-        TranscriptionAppTheme {
-            TranscriptionScreen(viewModel)
-        }
-    }
-
+  @Preview(showBackground = true)
+  @Composable
+  fun AppPreview() {
+    TranscriptionAppTheme { TranscriptionScreen(viewModel) }
+  }
 }

@@ -9,5 +9,5 @@ import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShareScreen(viewModel: TranscriptionViewModel, activity: ComponentActivity) {
-    BottomSheet(viewModel, activity,true )
+  BottomSheet(viewModel, activity, true)
 }

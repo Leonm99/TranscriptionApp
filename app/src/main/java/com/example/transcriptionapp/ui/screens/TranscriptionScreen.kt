@@ -15,38 +15,24 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
 
-
 @Composable
 fun TranscriptionScreen(viewModel: TranscriptionViewModel) {
-    val activity = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == ComponentActivity.RESULT_OK) {
-            result.data?.data?.let { uri ->
-                viewModel.onAudioSelected(uri, activity)
+  val activity = LocalContext.current
+  val launcher =
+      rememberLauncherForActivityResult(
+          contract = ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == ComponentActivity.RESULT_OK) {
+              result.data?.data?.let { uri -> viewModel.onAudioSelected(uri, activity) }
             }
-        }
-    }
+          }
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+  Column(
+      modifier = Modifier.fillMaxSize(),
+      verticalArrangement = Arrangement.Center,
+      horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+    Button(onClick = { viewModel.buttonOnClick(launcher) }) { Text("Pick Audio") }
 
-        Button(onClick = {
-            viewModel.buttonOnClick(launcher)
-        }) {
-            Text("Pick Audio")
-        }
-
-        BottomSheet(viewModel)
-
-
-
-    }
+    BottomSheet(viewModel)
+  }
 }
-
-
-

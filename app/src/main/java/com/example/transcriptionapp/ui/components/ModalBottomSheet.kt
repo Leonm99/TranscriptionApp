@@ -23,51 +23,44 @@ import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BottomSheet(viewModel: TranscriptionViewModel, activity: ComponentActivity? = null, finishAfter: Boolean? = false) {
+fun BottomSheet(
+    viewModel: TranscriptionViewModel,
+    activity: ComponentActivity? = null,
+    finishAfter: Boolean? = false
+) {
 
-    val showBottomSheet by viewModel.showBottomSheet.collectAsState()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    val isLoading by viewModel.isLoading.collectAsState()
-    val transcription by viewModel.transcription.collectAsState()
+  val showBottomSheet by viewModel.showBottomSheet.collectAsState()
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
+  val isLoading by viewModel.isLoading.collectAsState()
+  val transcription by viewModel.transcription.collectAsState()
 
-    if (showBottomSheet) {
+  if (showBottomSheet) {
 
     ModalBottomSheet(
-        modifier = Modifier.fillMaxHeight()
-            .padding(top = 50.dp),
+        modifier = Modifier.fillMaxHeight().padding(top = 50.dp),
         sheetState = sheetState,
-        onDismissRequest = { viewModel.hideBottomSheet()
-            if (activity != null && finishAfter == true) {
-                Log.d("ModalBottomSheet", "FINISH")
-                activity.finish()
-            }
-        }
-    ) {
-
-
-        if (isLoading) {
+        onDismissRequest = {
+          viewModel.hideBottomSheet()
+          if (activity != null && finishAfter == true) {
+            Log.d("ModalBottomSheet", "FINISH")
+            activity.finish()
+          }
+        }) {
+          if (isLoading) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .size(100.dp)
-                )
+              CircularProgressIndicator(modifier = Modifier.size(100.dp))
             }
-        } else {
-            Column(
-
-            ) {
-                transcription?.let {
-                    Text(modifier = Modifier.padding(16.dp), text = "Transcription: $it")
+          } else {
+            Column {
+              transcription?.let {
+                Text(modifier = Modifier.padding(16.dp), text = "Transcription: $it")
+              }
             }
-
-            }
-
+          }
         }
-
-    }
-    }
+  }
 }
