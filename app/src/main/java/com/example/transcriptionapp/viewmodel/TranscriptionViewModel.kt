@@ -1,15 +1,13 @@
-package com.example.transcriptionapp
+package com.example.transcriptionapp.viewmodel
 
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.launch
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.transcriptionapp.model.OpenAIClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,13 +32,10 @@ class TranscriptionViewModel : ViewModel() {
         _showBottomSheet.value = false
     }
 
-    private val _selectedAudioUri = MutableStateFlow<Uri?>(null)
-    var selectedAudioUri: StateFlow<Uri?> = _selectedAudioUri.asStateFlow()
 
 
 
-
-    suspend fun transcribeAudioFile(audioUri: Uri, context: Context): String {
+    private suspend fun transcribeAudioFile(audioUri: Uri, context: Context): String {
         val tempFile = getFileFromUri(audioUri, context) ?: throw IllegalArgumentException("Invalid URI")
         val requestBody = tempFile.asRequestBody("audio/*".toMediaTypeOrNull())
         val audioPart = MultipartBody.Part.createFormData("file", tempFile.name, requestBody)
@@ -69,13 +64,14 @@ class TranscriptionViewModel : ViewModel() {
 
     fun onAudioSelected(audioUri: Uri, context: Context) {
         viewModelScope.launch {
+            _showBottomSheet.value = true
             _isLoading.value = true
             val transcriptionResult = withContext(Dispatchers.IO) {
                 transcribeAudioFile(audioUri, context)
             }
 
             _transcription.value = transcriptionResult
-            _showBottomSheet.value = true
+
             _isLoading.value = false
         }
     }

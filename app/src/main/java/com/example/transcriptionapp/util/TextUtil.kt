@@ -15,9 +15,9 @@ private const val URL_REGEX_PATTERN =
 
 
     fun matchUrlFromSharedText(s: String?): String {
-        findURLsFromString(s, true).joinToString(separator = "\n").run {
+        findURLsFromString(s!!, true).joinToString(separator = "\n").run {
             if (isEmpty()) Log.d(TAG, "No URL found in shared text")
-            //            else makeToast(R.string.share_success_msg)
+            // else makeToast(R.string.share_success_msg)
             return this
         }
     }

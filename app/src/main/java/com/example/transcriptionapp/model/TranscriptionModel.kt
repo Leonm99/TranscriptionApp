@@ -1,4 +1,4 @@
-package com.example.transcriptionapp
+package com.example.transcriptionapp.model
 
 
 import okhttp3.Interceptor
