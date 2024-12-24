@@ -2,16 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.example.transcriptionapp"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.transcriptionapp"
         minSdk = 29
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -55,6 +56,10 @@ dependencies {
     implementation(libs.logging.inceptor)
     implementation(libs.material3)
     implementation (libs.material)
+    implementation(libs.destinationsCore)
+    implementation(libs.destinationsBottomSheet)
+    ksp(libs.destinationsKsp)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
