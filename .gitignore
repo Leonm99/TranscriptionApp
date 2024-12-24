@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+/app/src/androidTest/java/com/example/transcriptionapp/ExampleInstrumentedTest.kt
+/app/src/test/java/com/example/transcriptionapp/ExampleUnitTest.kt
+/.idea/ktfmt.xml
+/Pixel-7-Pro-API-34-Android-14_2024-12-14_234155.logcat
