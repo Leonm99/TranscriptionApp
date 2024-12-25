@@ -23,7 +23,7 @@ class ShareActivity : ComponentActivity() {
   private val viewModel by viewModels<TranscriptionViewModel>()
   private var sharedUrlCached: String = ""
 
-  override fun onNewIntent(intent: Intent?) {
+  override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     handleIntent(intent)
   }

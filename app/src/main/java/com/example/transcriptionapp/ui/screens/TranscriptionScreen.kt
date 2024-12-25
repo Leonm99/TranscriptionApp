@@ -1,5 +1,6 @@
 package com.example.transcriptionapp.ui.screens
 
+import android.app.Activity
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,7 +38,7 @@ fun TranscriptionScreen(navigator: DestinationsNavigator) {
   val launcher =
       rememberLauncherForActivityResult(
           contract = ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == ComponentActivity.RESULT_OK) {
+            if (result.resultCode == Activity.RESULT_OK) {
               result.data?.data?.let { uri -> viewModel.onAudioSelected(uri, activity) }
             }
           }
