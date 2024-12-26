@@ -50,15 +50,24 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
     implementation(libs.retrofit)
     implementation(libs.convert.gson)
     implementation(libs.okhttp)
     implementation(libs.logging.inceptor)
+
     implementation(libs.material3)
     implementation (libs.material)
+
     implementation(libs.destinationsCore)
     implementation(libs.destinationsBottomSheet)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     ksp(libs.destinationsKsp)
+
+    implementation (libs.composeSettings.ui)
+    implementation (libs.composeSettings.ui.extended)
+
+    implementation(libs.androidx.datastore.preferences)
 
 
     testImplementation(libs.junit)
