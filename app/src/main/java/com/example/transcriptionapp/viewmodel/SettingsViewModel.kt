@@ -1,15 +1,22 @@
 package com.example.transcriptionapp.viewmodel
 
 import android.app.Application
-import androidx.datastore.preferences.core.intPreferencesKey
+import android.util.Log
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.util.DataStoreUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+
+private const val TAG = "SettingsViewModel"
+
+enum class DialogType { API, LANGUAGE, MODEL, DELETE }
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -18,33 +25,44 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _showDialog = MutableStateFlow(false)
     var showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
-    private val _dialogType = MutableStateFlow(0)
-    var dialogType = _dialogType.asStateFlow()
+    private val _dialogType = MutableStateFlow(DialogType.API)
+    var dialogType: StateFlow<DialogType> = _dialogType.asStateFlow()
+
 
     private val _userApiKey = MutableStateFlow("")
     var userApiKey: StateFlow<String> = _userApiKey.asStateFlow()
 
-    private val _selectedLanguage = MutableStateFlow("")
+    private val _selectedLanguage = MutableStateFlow("English")
     var selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
 
+    private val _selectedModel = MutableStateFlow("gpt-4o-mini")
+    var selectedModel: StateFlow<String> = _selectedModel.asStateFlow()
+
+    private val _switchState = MutableStateFlow(false)
+    var switchState: StateFlow<Boolean> = _switchState.asStateFlow()
+
     init {
-        viewModelScope.launch {
-            dataStoreUtil.getString(stringPreferencesKey("userApiKey")).collect { storedApiKey ->
-                _userApiKey.value = storedApiKey ?: ""
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+                combine(
+                    dataStoreUtil.getString(stringPreferencesKey("userApiKey")),
+                    dataStoreUtil.getString(stringPreferencesKey("selectedLanguage")),
+                    dataStoreUtil.getString(stringPreferencesKey("selectedModel")),
+                    dataStoreUtil.getBoolean(booleanPreferencesKey("isFormattingEnabled"))
+                ) { apiKey, language, model, switchState ->
+                    _userApiKey.value = apiKey ?: ""
+                    _selectedLanguage.value = language ?: ""
+                    _selectedModel.value = model ?: ""
+                    _switchState.value = switchState
+                }.collect {
+                    Log.d(TAG, "API Key: ${_userApiKey.value}, Language: ${_selectedLanguage.value}, Model: ${_selectedModel.value}")
+                }
         }
     }
 
-        fun showDialog(type: String = "") {
-            when (type) {
-                "API" -> _dialogType.value = 0
-                "LANGUAGE" -> _dialogType.value = 1
-                "MODEL" -> _dialogType.value = 2
-                "DELETE" -> _dialogType.value = 3
-                else -> true
-            }
-            _showDialog.value = true
-        }
+    fun showDialog(type: DialogType = DialogType.API) {
+        _dialogType.value = type
+        _showDialog.value = true
+    }
 
         fun hideDialog() {
             _showDialog.value = false
@@ -52,8 +70,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
         fun setUserApiKey(key: String) {
             _userApiKey.value = key
-            viewModelScope.launch {
-                dataStoreUtil.putString(stringPreferencesKey("userApiKey"), key)
+            viewModelScope.launch(Dispatchers.IO) {
+
+                    dataStoreUtil.putString(stringPreferencesKey("userApiKey"), key)
+
 
             }
 
@@ -62,15 +82,54 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setSelectedLanguage(key: String) {
         _selectedLanguage.value = key
-        viewModelScope.launch {
-            dataStoreUtil.putString(stringPreferencesKey("selectedLanguage"), key)
+        viewModelScope.launch(Dispatchers.IO) {
+                dataStoreUtil.putString(stringPreferencesKey("selectedLanguage"), key)
+
+        }
+    }
+
+    fun getSelectedLanguage(): String {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            dataStoreUtil.getString(stringPreferencesKey("selectedLanguage")).collect { storedLanguage ->
+                _selectedLanguage.value = storedLanguage ?: ""
+
+            }
 
         }
 
-
+        Log.d(TAG, _selectedLanguage.value)
+        return _selectedLanguage.value
     }
 
+    fun setSelectedModel(key: String) {
 
+        viewModelScope.launch(Dispatchers.IO) {
+                dataStoreUtil.putString(stringPreferencesKey("selectedModel"), key)
+                _selectedModel.value = key
 
+        }
+    }
+
+    fun getSelectedmodel(): String {
+        viewModelScope.launch(Dispatchers.IO) {
+
+                dataStoreUtil.getString(stringPreferencesKey("selectedModel"))
+                    .collect { storedmodel ->
+                        _selectedModel.value = storedmodel ?: ""
+
+            }
+        }
+        return _selectedModel.value
+    }
+
+    fun updateSwitchState(newState: Boolean) {
+        _switchState.value = newState
+        viewModelScope.launch(Dispatchers.IO) {
+                dataStoreUtil.putBoolean(booleanPreferencesKey("isFormattingEnabled"), newState)
+
+        }
+
+    }
 
 }

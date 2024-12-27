@@ -4,12 +4,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,7 +19,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -30,6 +28,7 @@ import com.example.transcriptionapp.ui.components.ApiKeyDialog
 import com.example.transcriptionapp.ui.components.DeleteDialog
 import com.example.transcriptionapp.ui.components.LanguageDialog
 import com.example.transcriptionapp.ui.components.ModelDialog
+import com.example.transcriptionapp.viewmodel.DialogType
 import com.example.transcriptionapp.viewmodel.SettingsViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -47,6 +46,8 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
     val dialogType by viewModel.dialogType.collectAsState()
     val userApiKey by viewModel.userApiKey.collectAsState()
     val selectedLanguage by viewModel.selectedLanguage.collectAsState()
+    val selectedModel by viewModel.selectedModel.collectAsState()
+    val switchState by viewModel.switchState.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally) {
@@ -73,45 +74,44 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
             title = { Text(text = "OpenAI API Key") },
             subtitle = { Text(text = userApiKey) },
             onClick = {
-                viewModel.showDialog("API")
+                viewModel.showDialog(DialogType.API)
             },
-            icon = { Icon(imageVector = Icons.Default.Settings, contentDescription = "Back") },
+            icon = { Icon(imageVector = Icons.Default.Key, contentDescription = "API Key") },
         )
 
         SettingsMenuLink(
             title = { Text(text = "Language") },
             subtitle = { Text(text = selectedLanguage) },
             onClick = {
-                viewModel.showDialog("LANGUAGE")
+                viewModel.showDialog(DialogType.LANGUAGE)
             },
-            icon = { Icon(imageVector = Icons.Default.Person, contentDescription = "Back") },
+            icon = { Icon(imageVector = Icons.Default.Language, contentDescription = "Language") },
         )
 
         SettingsMenuLink(
             title = { Text(text = "Model") },
-            subtitle = { Text(text = "Model for Summarization.") },
+            subtitle = { Text(text = selectedModel) },
             onClick = {
-                viewModel.showDialog("MODEL")
+                viewModel.showDialog(DialogType.MODEL)
             },
-            icon = { Icon(imageVector = Icons.Default.Star, contentDescription = "Back") },
+            icon = { Icon(imageVector = Icons.Default.Bolt, contentDescription = "Model") },
         )
 
         SettingsSwitch(
-            state = false,
+            state = switchState,
             title = { Text(text = "Text correction") },
             subtitle = { Text(text = "Format the Output Text.") },
-            modifier = Modifier,
-            enabled = true,
-            icon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Back") },
-            onCheckedChange = { newState: Boolean -> },
+            icon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Format") },
+            onCheckedChange = {viewModel.updateSwitchState(it)
+            },
         )
         SettingsMenuLink(
             title = { Text(text = "Delete Transcriptions") },
             subtitle = { Text(text = "Deletes all Transcriptions.") },
             onClick = {
-
+                viewModel.showDialog(DialogType.DELETE)
             },
-            icon = { Icon(imageVector = Icons.Default.Delete, contentDescription = "Back") },
+            icon = { Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete") },
         )
 
 
@@ -119,13 +119,12 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
     }
 
     if(showDialog){
-        BasicAlertDialog(onDismissRequest = { viewModel.hideDialog() }) {
             when(dialogType){
-                0 -> ApiKeyDialog(viewModel)
-                1 -> LanguageDialog(viewModel)
-                2 -> ModelDialog(viewModel)
-                3 -> DeleteDialog(viewModel)
+                DialogType.API -> ApiKeyDialog(viewModel)
+                DialogType.LANGUAGE-> LanguageDialog(viewModel, viewModel.getSelectedLanguage())
+                DialogType.MODEL -> ModelDialog(viewModel, viewModel.getSelectedmodel())
+                DialogType.DELETE -> DeleteDialog(viewModel)
             }
-        }
+
     }
 }

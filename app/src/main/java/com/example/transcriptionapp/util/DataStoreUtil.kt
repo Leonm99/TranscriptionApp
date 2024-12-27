@@ -43,7 +43,7 @@ class DataStoreUtil(private val context: Context) {
 
     fun getBoolean(key: Preferences.Key<Boolean>): Flow<Boolean> {
         return context.dataStore.data.map { preferences ->
-            preferences[key] ?: false
+            preferences[key] == true
         }
     }
 
