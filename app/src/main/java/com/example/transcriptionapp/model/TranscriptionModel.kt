@@ -23,7 +23,7 @@ interface OpenAIService {
   ): TranscriptionResponse
 }
 
-object OpenAIClient {
+object OpenAIClient{
   private val okHttpClient =
       OkHttpClient.Builder()
           .addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC))

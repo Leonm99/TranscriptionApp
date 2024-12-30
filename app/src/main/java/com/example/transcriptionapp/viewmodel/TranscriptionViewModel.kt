@@ -8,7 +8,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.model.OpenAIClient
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +17,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 class TranscriptionViewModel : ViewModel() {
   private val _transcription = MutableStateFlow<String?>(null)
@@ -42,6 +42,7 @@ class TranscriptionViewModel : ViewModel() {
     val response = OpenAIClient.service.transcribeAudio(audioPart)
     return response.text
   }
+
 
   private fun getFileFromUri(uri: Uri, context: Context): File? {
     return try {
@@ -79,5 +80,9 @@ class TranscriptionViewModel : ViewModel() {
           addCategory(Intent.CATEGORY_OPENABLE)
         }
     launcher.launch(intent)
+  }
+
+  fun summaryOnClick(){
+
   }
 }
