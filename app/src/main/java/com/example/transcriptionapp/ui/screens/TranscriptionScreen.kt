@@ -1,7 +1,6 @@
 package com.example.transcriptionapp.ui.screens
 
 import android.app.Activity
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -66,6 +65,6 @@ fun TranscriptionScreen(navigator: DestinationsNavigator) {
   ) {
     Button(onClick = { viewModel.buttonOnClick(launcher) }) { Text("Pick Audio") }
 
-    BottomSheet(viewModel)
   }
+    BottomSheet(viewModel)
 }

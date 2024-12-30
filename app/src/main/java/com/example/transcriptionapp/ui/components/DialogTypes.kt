@@ -62,7 +62,7 @@ fun ApiKeyDialog(viewModel: SettingsViewModel) {
 
 
 @Composable
-fun LanguageDialog(viewModel: SettingsViewModel, selectedLanguageKey: String?) {
+ fun LanguageDialog(viewModel: SettingsViewModel, selectedLanguageKey: String?) {
    val userSelectedLanguage = rememberSaveable { mutableStateOf(selectedLanguageKey) }
     val items = stringArrayResource(id = R.array.string_array_languages)
 
