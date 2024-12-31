@@ -1,11 +1,12 @@
 package com.example.transcriptionapp.viewmodel
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.api.OpenAIClient
 import com.example.transcriptionapp.model.TranscriptionRepository
@@ -22,9 +23,7 @@ data class TranscriptionState(
   val transcription: String? = null
 )
 private const val TAG = "TranscriptionViewModel"
-class TranscriptionViewModel(
-
-) : ViewModel() {
+class TranscriptionViewModel(application: Application) : AndroidViewModel(application) {
 
   private val _transcriptionState = MutableStateFlow(TranscriptionState())
   val transcriptionState: StateFlow<TranscriptionState> = _transcriptionState.asStateFlow()
@@ -36,7 +35,7 @@ class TranscriptionViewModel(
     _isBottomSheetVisible.value = false
   }
 
-  private val transcriptionRepository: TranscriptionRepository = TranscriptionRepository(OpenAIClient.service)
+  private val transcriptionRepository: TranscriptionRepository = TranscriptionRepository(OpenAIClient.createService())
 
 
     fun onAudioSelected(audioUri: Uri, context: Context) {

@@ -85,7 +85,6 @@ fun BottomSheet(
                                         )
                                     }
                                     .wrapContentWidth()
-                                    .padding(20.dp)
                                     .shadow(
                                         elevation = 4.dp,
                                         shape = RoundedCornerShape(
