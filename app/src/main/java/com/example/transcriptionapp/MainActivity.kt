@@ -6,9 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.lifecycleScope
-import com.example.transcriptionapp.api.ApiKeyHolder
+import com.example.transcriptionapp.api.SettingsHolder
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
 import com.example.transcriptionapp.util.DataStoreUtil
 import com.ramcosta.composedestinations.DestinationsNavHost
@@ -24,7 +25,10 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent { TranscriptionAppTheme { DestinationsNavHost(navGraph = NavGraphs.root) } }
     lifecycleScope.launch(Dispatchers.IO){
-      ApiKeyHolder.apiKey = DataStoreUtil(applicationContext).getString(stringPreferencesKey("userApiKey")).first()
+      SettingsHolder.apiKey = DataStoreUtil(applicationContext).getString(stringPreferencesKey("userApiKey")).first()!!
+      SettingsHolder.language = DataStoreUtil(applicationContext).getString(stringPreferencesKey("selectedLanguage")).first()!!
+      SettingsHolder.model = DataStoreUtil(applicationContext).getString(stringPreferencesKey("selectedModel")).first()!!
+      SettingsHolder.format = DataStoreUtil(applicationContext).getBoolean(booleanPreferencesKey("isFormattingEnabled")).first()
     }
 
   }

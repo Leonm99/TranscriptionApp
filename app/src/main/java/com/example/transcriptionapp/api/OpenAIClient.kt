@@ -1,7 +1,7 @@
 package com.example.transcriptionapp.api
 
 import android.util.Log
-import com.example.transcriptionapp.api.ApiKeyHolder.apiKey
+import com.example.transcriptionapp.api.SettingsHolder.apiKey
 import com.example.transcriptionapp.model.SummarizationRequest
 import com.example.transcriptionapp.model.SummarizationResponse
 import com.example.transcriptionapp.model.TranscriptionResponse
@@ -19,8 +19,11 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 
-object ApiKeyHolder {
-    var apiKey: String? = null
+object SettingsHolder {
+    var apiKey: String = "not_set"
+    var language: String = "English"
+    var model: String = "gpt-4o-mini"
+    var format: Boolean = false
 }
 
 interface OpenAIService {

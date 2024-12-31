@@ -6,12 +6,15 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.transcriptionapp.api.SettingsHolder.apiKey
+import com.example.transcriptionapp.api.SettingsHolder.format
+import com.example.transcriptionapp.api.SettingsHolder.language
+import com.example.transcriptionapp.api.SettingsHolder.model
 import com.example.transcriptionapp.util.DataStoreUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
@@ -42,20 +45,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     var switchState: StateFlow<Boolean> = _switchState.asStateFlow()
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-                combine(
-                    dataStoreUtil.getString(stringPreferencesKey("userApiKey")),
-                    dataStoreUtil.getString(stringPreferencesKey("selectedLanguage")),
-                    dataStoreUtil.getString(stringPreferencesKey("selectedModel")),
-                    dataStoreUtil.getBoolean(booleanPreferencesKey("isFormattingEnabled"))
-                ) { apiKey, language, model, switchState ->
-                    _userApiKey.value = apiKey ?: ""
-                    _selectedLanguage.value = language ?: ""
-                    _selectedModel.value = model ?: ""
-                    _switchState.value = switchState
-                }.collect {
-                    Log.d(TAG, "API Key: ${_userApiKey.value}, Language: ${_selectedLanguage.value}, Model: ${_selectedModel.value}")
-                }
+        viewModelScope.launch {
+                    _userApiKey.value = apiKey
+                    _selectedLanguage.value = language
+                    _selectedModel.value = model
+                    _switchState.value = format
+
         }
     }
 
@@ -86,6 +81,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 dataStoreUtil.putString(stringPreferencesKey("selectedLanguage"), key)
 
         }
+        Log.d(TAG, _selectedLanguage.value)
     }
 
     fun getSelectedLanguage(): String {
