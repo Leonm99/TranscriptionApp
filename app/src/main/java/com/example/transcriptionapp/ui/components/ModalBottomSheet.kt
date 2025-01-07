@@ -1,29 +1,33 @@
 package com.example.transcriptionapp.ui.components
 
-import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.viewmodel.TranscriptionState
@@ -37,11 +41,15 @@ fun BottomSheet(
     finishAfter: Boolean? = false,
 ) {
     val showBottomSheet by viewModel.isBottomSheetVisible.collectAsState()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val (isLoading, transcription) = viewModel.transcriptionState.collectAsState(
         initial = TranscriptionState()
     ).value
+    var isFullyExpanded by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = isFullyExpanded)
 
+    LaunchedEffect(transcription) {
+        isFullyExpanded = (transcription?.length ?: 0) > 500 // Example threshold
+    }
     Box(modifier = Modifier.fillMaxSize()) {
 
         if (showBottomSheet) {
@@ -53,7 +61,6 @@ fun BottomSheet(
                 onDismissRequest = {
                     viewModel.hideBottomSheet()
                     if (activity != null && finishAfter == true) {
-                        Log.d("ModalBottomSheet", "FINISH")
                         activity.finish()
                     }
                 }
@@ -61,50 +68,50 @@ fun BottomSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(15.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
+
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(100.dp))
                     } else {
                         transcription?.let {
-                            Text(
-                                modifier = Modifier.padding(16.dp),
-                                text = "Transcription: $it"
-                            )
-                            Box(modifier = Modifier.fillMaxHeight(),
-                                contentAlignment = Alignment.BottomEnd){
-                            Button(
+                            TranscriptionCard(it)
+                            Box(
                                 modifier = Modifier
-                                    .offset {
-                                        IntOffset(
-                                            x = 0,
-                                            y = -sheetState.requireOffset()
-                                                .toInt()
-// https://stackoverflow.com/questions/76454800/how-to-place-a-sticky-bottom-row-bar-at-modalbottomsheet-using-jetpack-compose
-                                        )
-                                    }
-                                    .wrapContentWidth()
-                                    .shadow(
-                                        elevation = 4.dp,
-                                        shape = RoundedCornerShape(
-                                            25.dp
-                                        )
-                                    ),
+                                    .fillMaxHeight(),
 
-                                onClick = { viewModel.summarize() }
-
+                                contentAlignment = Alignment.BottomEnd
                             ) {
-                                Text(text = "Summarize")
-                            }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                        .offset {
+                                    IntOffset(
+                                        x = 0,
+                                        y = -sheetState.requireOffset()
+                                            .toInt()
+                                    )
+                                },
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    StickyBottomSheetButton(
+                                        onClick = { viewModel.summarize() },
+                                        text = "Summarize",
+                                    )
+                                    StickyBottomSheetButton(
+                                        onClick = { viewModel.translate() },
+                                        text = "Translate"
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
-
-
-
     }
 }
