@@ -44,4 +44,15 @@ fun getFileFromUri(uri: Uri, context: Context): File? {
     null
   }
 }
+//  fun convertAudio(inputUri: Uri, outputFormat: String, context: Context): Uri? {
+//    return try {
+//      val context = null
+//      val outputPath = File(context.cacheDir, "output.$outputFormat").absolutePath
+//      val result = FFmpeg.execute(arrayOf("-y", "-i", inputUri.path, "-c:a", outputFormat, outputPath))
+//      if (result == 0) Uri.fromFile(File(outputPath)) else null
+//    } catch (e: Exception) {
+//      e.printStackTrace()
+//      null
+//    }
+//  }
 }

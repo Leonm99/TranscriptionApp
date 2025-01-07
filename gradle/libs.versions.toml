@@ -6,10 +6,14 @@ coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
+ktorClientAndroid = "2.3.8"
+ktorClientAndroidVersion = "3.0.3"
+ktorClientOkhttp = "3.0.3"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 composeBom = "2024.12.01"
 material = "1.12.0"
+openaiClient = "3.8.2"
 retrofit = "2.11.0"
 kspversion = "2.0.0-1.0.24"
 destinationsCore = "2.1.0-beta15"
@@ -24,6 +28,8 @@ materialIconsExtendedVersion = "1.7.6"
 
 
 [libraries]
+
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 materialIconsExtended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtendedVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +47,7 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+openai-client = { module = "com.aallam.openai:openai-client", version.ref = "openaiClient" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 convert-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converter-gson" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }

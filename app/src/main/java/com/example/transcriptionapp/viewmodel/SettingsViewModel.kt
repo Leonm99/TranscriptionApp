@@ -6,16 +6,16 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.SettingsHolder.apiKey
-import com.example.transcriptionapp.api.SettingsHolder.format
-import com.example.transcriptionapp.api.SettingsHolder.language
-import com.example.transcriptionapp.api.SettingsHolder.model
 import com.example.transcriptionapp.util.DataStoreUtil
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlin.coroutines.CoroutineContext
 
 private const val TAG = "SettingsViewModel"
 
@@ -45,11 +45,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     var switchState: StateFlow<Boolean> = _switchState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-                    _userApiKey.value = apiKey
-                    _selectedLanguage.value = language
-                    _selectedModel.value = model
-                    _switchState.value = format
+        viewModelScope.launch{
+            _userApiKey.value = dataStoreUtil.getString(stringPreferencesKey("userApiKey")).first() ?: ""
+            _selectedLanguage.value = dataStoreUtil.getString(stringPreferencesKey("selectedLanguage")).first() ?: ""
+            _selectedModel.value = dataStoreUtil.getString(stringPreferencesKey("selectedModel")).first() ?: ""
+            _switchState.value = dataStoreUtil.getBoolean(booleanPreferencesKey("isFormattingEnabled")).first()
 
         }
     }

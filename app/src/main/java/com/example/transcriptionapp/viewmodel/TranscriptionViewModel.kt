@@ -6,10 +6,10 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.OpenAIClient
-import com.example.transcriptionapp.model.TranscriptionRepository
+import com.example.transcriptionapp.api.OpenAiHandler
 import com.example.transcriptionapp.util.FileUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,11 +31,14 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
   private val _isBottomSheetVisible = MutableStateFlow(false)
   val isBottomSheetVisible: StateFlow<Boolean> = _isBottomSheetVisible.asStateFlow()
 
+  private lateinit var openAiHandler: OpenAiHandler
+
   fun hideBottomSheet() {
     _isBottomSheetVisible.value = false
   }
-
-  private val transcriptionRepository: TranscriptionRepository = TranscriptionRepository(OpenAIClient.createService())
+init {
+  openAiHandler = OpenAiHandler(getApplication<Application>().applicationContext)
+}
 
 
     fun onAudioSelected(audioUri: Uri, context: Context) {
@@ -46,12 +49,12 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
       try {
         val audioFile = withContext(Dispatchers.IO) { FileUtils.getFileFromUri(audioUri, context) }
         val transcriptionResult = withContext(Dispatchers.IO) {
-          transcriptionRepository.transcribeAudio(audioFile)
+          openAiHandler.whisper(audioFile!!.absolutePath)
         }
 
         _transcriptionState.value = _transcriptionState.value.copy(
           isLoading = false,
-          transcription = transcriptionResult.text
+          transcription = transcriptionResult
         )
       } catch (e: Exception) {
         // Handle error, e.g., update UI with error message
@@ -75,7 +78,7 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
       _transcriptionState.value = _transcriptionState.value.copy(isLoading = true)
       try {
         val summaryResult = withContext(Dispatchers.IO) {
-          transcriptionRepository.summarizeText(transcriptionState.value.transcription ?: "")
+          openAiHandler.summarize(transcriptionState.value.transcription.orEmpty())
         }
 
         _transcriptionState.value = _transcriptionState.value.copy(
@@ -89,4 +92,28 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
       }
     }
   }
+
+  fun translate() {
+    viewModelScope.launch {
+      _transcriptionState.value = _transcriptionState.value.copy(isLoading = true)
+      try {
+        val translateResult = withContext(Dispatchers.IO) {
+          openAiHandler.translate(transcriptionState.value.transcription.orEmpty())
+        }
+
+        _transcriptionState.value = _transcriptionState.value.copy(
+          isLoading = false,
+          transcription = translateResult
+
+        )
+
+      } catch (e: Exception) {
+        Log.e(TAG, "Error Translating text", e)
+      }
+    }
+  }
+
+
+
+
 }
