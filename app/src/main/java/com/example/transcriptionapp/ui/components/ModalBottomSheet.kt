@@ -99,12 +99,10 @@ fun BottomSheet(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     StickyBottomSheetButton(
-                                        sheetState = sheetState,
                                         onClick = { viewModel.summarize() },
                                         text = "Summarize",
                                     )
                                     StickyBottomSheetButton(
-                                        sheetState = sheetState,
                                         onClick = { viewModel.translate() },
                                         text = "Translate"
                                     )
