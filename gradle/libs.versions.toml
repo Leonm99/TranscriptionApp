@@ -1,24 +1,22 @@
 [versions]
 agp = "8.7.3"
 datastorePreferences = "1.1.1"
+kotlinxSerializationJson = "1.7.3"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
-ktorClientAndroid = "2.3.8"
-ktorClientAndroidVersion = "3.0.3"
-ktorClientOkhttp = "3.0.3"
+ktorClientAndroid = "3.0.0"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 composeBom = "2024.12.01"
 material = "1.12.0"
-openaiClient = "3.8.2"
+navigationCompose = "2.8.5"
+openaiClient = "4.0.0-beta01"
 retrofit = "2.11.0"
-kspversion = "2.0.0-1.0.24"
-destinationsCore = "2.1.0-beta15"
-destinationsBottomSheet = "2.1.0-beta15"
-destinationsKsp = "2.1.0-beta15"
+
+
 converter-gson = "2.9.0"
 okhttp = "4.12.0"
 logging-interceptor = "4.11.0"
@@ -29,11 +27,13 @@ materialIconsExtendedVersion = "1.7.6"
 
 [libraries]
 
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 materialIconsExtended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtendedVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -52,9 +52,7 @@ retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = 
 convert-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converter-gson" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 logging-inceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "logging-interceptor" }
-destinationsCore = { group = "io.github.raamcosta.compose-destinations", name = "core", version.ref = "destinationsCore" }
-destinationsBottomSheet = { group = "io.github.raamcosta.compose-destinations", name = "bottom-sheet", version.ref = "destinationsBottomSheet" }
-destinationsKsp = { group = "io.github.raamcosta.compose-destinations", name = "ksp", version.ref = "destinationsKsp" }
+
 composeSettings-ui = { group = "com.github.alorma.compose-settings", name = "ui-tiles", version.ref = "compose-settings" }
 composeSettings-ui-extended = { group = "com.github.alorma.compose-settings", name = "ui-tiles-extended", version.ref = "compose-settings" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
@@ -64,4 +62,5 @@ androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "l
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-ksp = {  id = "com.google.devtools.ksp", version.ref = "kspversion" }
+
+jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

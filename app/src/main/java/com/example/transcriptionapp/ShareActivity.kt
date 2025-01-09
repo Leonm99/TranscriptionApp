@@ -14,8 +14,8 @@ import androidx.activity.viewModels
 import com.example.transcriptionapp.ui.screens.ShareScreen
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
 import com.example.transcriptionapp.util.matchUrlFromSharedText
-import com.example.transcriptionapp.util.FileUtils.saveFileToCache as saveToCache
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
+import com.example.transcriptionapp.util.FileUtils.saveFileToCache as saveToCache
 
 private const val TAG = "ShareActivity"
 

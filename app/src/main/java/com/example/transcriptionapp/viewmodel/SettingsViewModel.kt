@@ -1,29 +1,26 @@
 package com.example.transcriptionapp.viewmodel
 
-import android.app.Application
-import android.util.Log
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.util.DataStoreUtil
-import kotlinx.coroutines.CoroutineScope
+import com.example.transcriptionapp.model.SettingsRepository
+import com.example.transcriptionapp.model.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlin.coroutines.CoroutineContext
 
 private const val TAG = "SettingsViewModel"
 
 enum class DialogType { API, LANGUAGE, MODEL, DELETE }
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+class SettingsViewModel(private val settingsRepository: SettingsRepository) : ViewModel() {
 
-    val dataStoreUtil = DataStoreUtil(getApplication<Application>().applicationContext)
+    val settings: StateFlow<UserPreferences> = settingsRepository.userPreferencesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserPreferences())
+
 
     private val _showDialog = MutableStateFlow(false)
     var showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
@@ -32,27 +29,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     var dialogType: StateFlow<DialogType> = _dialogType.asStateFlow()
 
 
-    private val _userApiKey = MutableStateFlow("")
-    var userApiKey: StateFlow<String> = _userApiKey.asStateFlow()
 
-    private val _selectedLanguage = MutableStateFlow("English")
-    var selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
-
-    private val _selectedModel = MutableStateFlow("gpt-4o-mini")
-    var selectedModel: StateFlow<String> = _selectedModel.asStateFlow()
-
-    private val _switchState = MutableStateFlow(false)
-    var switchState: StateFlow<Boolean> = _switchState.asStateFlow()
-
-    init {
-        viewModelScope.launch{
-            _userApiKey.value = dataStoreUtil.getString(stringPreferencesKey("userApiKey")).first() ?: ""
-            _selectedLanguage.value = dataStoreUtil.getString(stringPreferencesKey("selectedLanguage")).first() ?: ""
-            _selectedModel.value = dataStoreUtil.getString(stringPreferencesKey("selectedModel")).first() ?: ""
-            _switchState.value = dataStoreUtil.getBoolean(booleanPreferencesKey("isFormattingEnabled")).first()
-
-        }
-    }
 
     fun showDialog(type: DialogType = DialogType.API) {
         _dialogType.value = type
@@ -64,68 +41,31 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
 
         fun setUserApiKey(key: String) {
-            _userApiKey.value = key
+
             viewModelScope.launch(Dispatchers.IO) {
-
-                    dataStoreUtil.putString(stringPreferencesKey("userApiKey"), key)
-
-
+                 settingsRepository.setUserApiKey(key)
             }
 
 
         }
 
-    fun setSelectedLanguage(key: String) {
-        _selectedLanguage.value = key
+    fun setSelectedLanguage(language: String) {
         viewModelScope.launch(Dispatchers.IO) {
-                dataStoreUtil.putString(stringPreferencesKey("selectedLanguage"), key)
-
-        }
-        Log.d(TAG, _selectedLanguage.value)
-    }
-
-    fun getSelectedLanguage(): String {
-        viewModelScope.launch(Dispatchers.IO) {
-
-            dataStoreUtil.getString(stringPreferencesKey("selectedLanguage")).collect { storedLanguage ->
-                _selectedLanguage.value = storedLanguage ?: ""
-
-            }
-
-        }
-
-        Log.d(TAG, _selectedLanguage.value)
-        return _selectedLanguage.value
-    }
-
-    fun setSelectedModel(key: String) {
-
-        viewModelScope.launch(Dispatchers.IO) {
-                dataStoreUtil.putString(stringPreferencesKey("selectedModel"), key)
-                _selectedModel.value = key
-
+            settingsRepository.setLanguage(language)
         }
     }
 
-    fun getSelectedmodel(): String {
+    fun setSelectedModel(model: String) {
         viewModelScope.launch(Dispatchers.IO) {
-
-                dataStoreUtil.getString(stringPreferencesKey("selectedModel"))
-                    .collect { storedmodel ->
-                        _selectedModel.value = storedmodel ?: ""
-
-            }
+            settingsRepository.setModel(model)
         }
-        return _selectedModel.value
     }
 
     fun updateSwitchState(newState: Boolean) {
-        _switchState.value = newState
         viewModelScope.launch(Dispatchers.IO) {
-                dataStoreUtil.putBoolean(booleanPreferencesKey("isFormattingEnabled"), newState)
-
+              settingsRepository.setFormatSwitchState(newState)
         }
-
     }
+
 
 }

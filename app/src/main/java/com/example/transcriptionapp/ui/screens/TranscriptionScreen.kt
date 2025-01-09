@@ -20,19 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.SettingsScreenDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Destination<RootGraph>(start = true)
 @Composable
-fun TranscriptionScreen(navigator: DestinationsNavigator) {
-    val viewModel: TranscriptionViewModel = viewModel()
+fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: TranscriptionViewModel) {
+
   val activity = LocalContext.current
   val launcher =
       rememberLauncherForActivityResult(
@@ -52,7 +47,7 @@ fun TranscriptionScreen(navigator: DestinationsNavigator) {
       actions = {
         IconButton(
             onClick = {
-                 navigator.navigate(SettingsScreenDestination())
+                 onSettingsClick()
             }) {
               Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
             }

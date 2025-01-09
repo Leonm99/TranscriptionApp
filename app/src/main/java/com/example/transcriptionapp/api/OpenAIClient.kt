@@ -1,9 +1,6 @@
 package com.example.transcriptionapp.api
 
-import android.content.Context
 import android.util.Log
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
@@ -12,56 +9,54 @@ import com.aallam.openai.api.file.FileSource
 import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
-import com.example.transcriptionapp.util.DataStoreUtil
-import io.ktor.client.HttpClient
+import com.example.transcriptionapp.model.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import okio.FileSystem
-import okio.Path.Companion.toPath
+import java.io.File
 import kotlin.time.Duration.Companion.seconds
 
-class OpenAiHandler(private val context: Context) {
+class OpenAiHandler(private val settingsRepository: SettingsRepository) {
+
     private var openai: OpenAI? = null
-    private val dataStoreUtils = DataStoreUtil(context)
     private val client = OkHttpClient()
+
     private var apiKey: String = ""
     private var language: String = "English"
     private var model: String = "GPT-o4-mini"
     private var isFormattingEnabled: Boolean = false
+
     private val MAX_RETRIES = 3
     private val RETRY_DELAY_MS = 1000L
 
     init {
-        getApiKeyAsync(object : ApiKeyListener {
-            override fun onApiKeyRetrieved(apiKey: String?, language: String?, model: String?, isFormattingEnabled: Boolean?) {
-                if (apiKey != null && apiKey.isNotEmpty()) {
-                    this@OpenAiHandler.apiKey = apiKey
-                    Log.d("OpenAiHandler", "API Key ABER IN GETAPI: $apiKey")
-                    Log.d("OpenAiHandler", " ABER IN INIT API Key: $apiKey")
-                    initOpenAI(apiKey)
-                }
-                if (language != null && language.isNotEmpty()) {
-                    this@OpenAiHandler.language = language
-                }
-                if (model != null && model.isNotEmpty()) {
-                    this@OpenAiHandler.model = model
-                }
-                if (isFormattingEnabled != null) {
-                    this@OpenAiHandler.isFormattingEnabled = isFormattingEnabled
-                }
+        Log.d("OpenAiHandler", "API Key: $apiKey")
+        CoroutineScope(Dispatchers.IO).launch {
+            settingsRepository.userPreferencesFlow.collect { userPreferences ->
+                Log.d("OpenAiHandler", "APISSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS Key: ${userPreferences.userApiKey}")
+                apiKey = userPreferences.userApiKey
+                language = userPreferences.selectedLanguage
+                model = userPreferences.selectedModel
+                isFormattingEnabled = userPreferences.formatSwitchState
+                initOpenAI(apiKey)
             }
-        })
+
+
+        }
+        Log.d("OpenAiHandler", "API Key:SDSADASDASDAD $apiKey")
+
 
     }
 
     private fun initOpenAI(apiKey: String) {
+        Log.d("OpenAiHandler", "API WAAAAAAAAAAAAAAAAAAAAAAAAAAA: $apiKey")
         openai = OpenAI(
             token = apiKey,
             timeout = Timeout(socket = 120.seconds)
@@ -69,34 +64,18 @@ class OpenAiHandler(private val context: Context) {
     }
 
 
-    interface ApiKeyListener {
-        fun onApiKeyRetrieved(apiKey: String?, language: String?, model: String?, isFormattingEnabled: Boolean? = false)
-    }
-
-    fun getApiKeyAsync(listener: ApiKeyListener) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val apiKey = dataStoreUtils.getString(stringPreferencesKey("userApiKey")).first()
-            Log.d("OpenAiHandler", "API Key: $apiKey")
-            val language = dataStoreUtils.getString(stringPreferencesKey("selectedLanguage")).first()
-            Log.d("OpenAiHandler", "Language: $language")
-            val model = dataStoreUtils.getString(stringPreferencesKey("selectedModel")).first()
-            Log.d("OpenAiHandler", "Model: $model")
-            val isFormattingEnabled = dataStoreUtils.getBoolean(booleanPreferencesKey("isFormattingEnabled")).first()
-
-            Log.d("OpenAiHandler", "isFormattingEnabled: $isFormattingEnabled")
-            withContext(Dispatchers.Main) {
-                listener.onApiKeyRetrieved(apiKey, language, model, isFormattingEnabled)
-            }
-        }
-    }
 
 
 
 
-    suspend fun whisper(path: String): String {
+    suspend fun whisper(file: File): String {
         println("Create transcription...")
+        val path = Path(file.absolutePath)
         val transcriptionRequest = TranscriptionRequest(
-            audio = FileSource(path = path.toPath(), fileSystem = FileSystem.SYSTEM),
+            audio = FileSource(
+                name = file.name,
+                source = SystemFileSystem.source(path)
+            ),
             model = ModelId("whisper-1")
         )
         val useCorrection = isFormattingEnabled

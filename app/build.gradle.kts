@@ -2,7 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.ksp)
+
+    alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 android {
@@ -63,15 +64,15 @@ dependencies {
     implementation (libs.openai.client)
     implementation(libs.ktor.client.android)
 
-    implementation(libs.destinationsCore)
-    implementation(libs.destinationsBottomSheet)
+
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    ksp(libs.destinationsKsp)
 
     implementation (libs.composeSettings.ui)
     implementation (libs.composeSettings.ui.extended)
 
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.kotlinx.serialization.json)
+    implementation (libs.androidx.navigation.compose)
 
 
     testImplementation(libs.junit)

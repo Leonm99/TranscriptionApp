@@ -21,7 +21,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.alorma.compose.settings.ui.SettingsMenuLink
 import com.alorma.compose.settings.ui.SettingsSwitch
 import com.example.transcriptionapp.ui.components.ApiKeyDialog
@@ -30,24 +29,18 @@ import com.example.transcriptionapp.ui.components.LanguageDialog
 import com.example.transcriptionapp.ui.components.ModelDialog
 import com.example.transcriptionapp.viewmodel.DialogType
 import com.example.transcriptionapp.viewmodel.SettingsViewModel
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.TranscriptionScreenDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Destination<RootGraph>
 @Composable
-fun SettingsScreen(navigator: DestinationsNavigator) {
+fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
 
-    val viewModel: SettingsViewModel = viewModel()
+
+
+
     val showDialog by viewModel.showDialog.collectAsState()
     val dialogType by viewModel.dialogType.collectAsState()
-    val userApiKey by viewModel.userApiKey.collectAsState()
-    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
-    val selectedModel by viewModel.selectedModel.collectAsState()
-    val switchState by viewModel.switchState.collectAsState()
+    val settings by viewModel.settings.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally) {
@@ -58,7 +51,7 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
             navigationIcon = {
                 IconButton(
                     onClick = {
-                        navigator.navigate(TranscriptionScreenDestination())
+                        onBackClick()
                     }) {
                     Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
@@ -72,7 +65,7 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
 
         SettingsMenuLink(
             title = { Text(text = "OpenAI API Key") },
-            subtitle = { Text(text = userApiKey) },
+            subtitle = { Text(text = settings.userApiKey) },
             onClick = {
                 viewModel.showDialog(DialogType.API)
             },
@@ -81,7 +74,7 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
 
         SettingsMenuLink(
             title = { Text(text = "Language") },
-            subtitle = { Text(text = selectedLanguage) },
+            subtitle = { Text(text = settings.selectedLanguage) },
             onClick = {
                 viewModel.showDialog(DialogType.LANGUAGE)
             },
@@ -90,7 +83,7 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
 
         SettingsMenuLink(
             title = { Text(text = "Model") },
-            subtitle = { Text(text = selectedModel) },
+            subtitle = { Text(text = settings.selectedModel) },
             onClick = {
                 viewModel.showDialog(DialogType.MODEL)
             },
@@ -98,7 +91,7 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
         )
 
         SettingsSwitch(
-            state = switchState,
+            state = settings.formatSwitchState,
             title = { Text(text = "Text correction") },
             subtitle = { Text(text = "Format the Output Text.") },
             icon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Format") },
@@ -121,8 +114,8 @@ fun SettingsScreen(navigator: DestinationsNavigator) {
     if(showDialog){
             when(dialogType){
                 DialogType.API -> ApiKeyDialog(viewModel)
-                DialogType.LANGUAGE-> LanguageDialog(viewModel, viewModel.getSelectedLanguage())
-                DialogType.MODEL -> ModelDialog(viewModel, viewModel.getSelectedmodel())
+                DialogType.LANGUAGE-> LanguageDialog(viewModel, settings.selectedLanguage)
+                DialogType.MODEL -> ModelDialog(viewModel, settings.selectedModel)
                 DialogType.DELETE -> DeleteDialog(viewModel)
             }
 
