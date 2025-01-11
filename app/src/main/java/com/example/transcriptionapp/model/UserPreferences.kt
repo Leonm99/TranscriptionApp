@@ -14,7 +14,7 @@ import java.util.Base64
 data class UserPreferences(
     val userApiKey: String = "NOT SET",
     val selectedLanguage: String = "English",
-    val selectedModel : String = "GPT-4o-mini",
+    val selectedModel : String = "gpt-4o-mini",
     val formatSwitchState : Boolean = false
 )
 

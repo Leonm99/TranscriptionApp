@@ -10,18 +10,26 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.ui.screens.ShareScreen
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
 import com.example.transcriptionapp.util.matchUrlFromSharedText
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
+import kotlinx.serialization.Serializable
 import com.example.transcriptionapp.util.FileUtils.saveFileToCache as saveToCache
 
 private const val TAG = "ShareActivity"
 
+
 class ShareActivity : ComponentActivity() {
-  private val viewModel by viewModels<TranscriptionViewModel>()
   private var sharedUrlCached: String = ""
+
+  private lateinit var settingsRepository: SettingsRepository
+  private lateinit var transcriptionViewModel: TranscriptionViewModel
+
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
@@ -33,6 +41,10 @@ class ShareActivity : ComponentActivity() {
 
     enableEdgeToEdge()
 
+    settingsRepository = SettingsRepository((application as TranscriptionApp).dataStore)
+    transcriptionViewModel = TranscriptionViewModel(settingsRepository)
+
+
     window.run {
       setBackgroundDrawable(ColorDrawable(0))
       setLayout(
@@ -42,7 +54,19 @@ class ShareActivity : ComponentActivity() {
       setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
     }
 
-    setContent { TranscriptionAppTheme { ShareScreen(viewModel, this) } }
+    setContent { TranscriptionAppTheme {
+      val navController = rememberNavController()
+      NavHost(navController = navController, startDestination = ShareScreen) {
+
+
+        composable<ShareScreen> {
+          ShareScreen(transcriptionViewModel, this@ShareActivity)
+        }
+
+      }
+
+
+    } }
 
     handleIntent(intent)
   }
@@ -57,7 +81,7 @@ class ShareActivity : ComponentActivity() {
             audioFile?.let { file ->
               Log.d("ReceiveIntentActivity", "Audio file path: ${file.absolutePath}")
               // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
-              viewModel.onAudioSelected(Uri.fromFile(file), this)
+              transcriptionViewModel.onAudioSelected(Uri.fromFile(file), this)
 
             }
         }
@@ -85,3 +109,6 @@ class ShareActivity : ComponentActivity() {
     })!!
   }
 }
+
+@Serializable
+object ShareScreen

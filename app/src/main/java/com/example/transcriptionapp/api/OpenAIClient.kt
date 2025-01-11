@@ -1,6 +1,5 @@
 package com.example.transcriptionapp.api
 
-import android.util.Log
 import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
@@ -30,42 +29,32 @@ class OpenAiHandler(private val settingsRepository: SettingsRepository) {
 
     private var apiKey: String = ""
     private var language: String = "English"
-    private var model: String = "GPT-o4-mini"
+    private var model: String = "gpt-o4-mini"
     private var isFormattingEnabled: Boolean = false
 
     private val MAX_RETRIES = 3
     private val RETRY_DELAY_MS = 1000L
 
     init {
-        Log.d("OpenAiHandler", "API Key: $apiKey")
         CoroutineScope(Dispatchers.IO).launch {
             settingsRepository.userPreferencesFlow.collect { userPreferences ->
-                Log.d("OpenAiHandler", "APISSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS Key: ${userPreferences.userApiKey}")
+
                 apiKey = userPreferences.userApiKey
                 language = userPreferences.selectedLanguage
                 model = userPreferences.selectedModel
                 isFormattingEnabled = userPreferences.formatSwitchState
                 initOpenAI(apiKey)
             }
-
-
         }
-        Log.d("OpenAiHandler", "API Key:SDSADASDASDAD $apiKey")
-
 
     }
 
     private fun initOpenAI(apiKey: String) {
-        Log.d("OpenAiHandler", "API WAAAAAAAAAAAAAAAAAAAAAAAAAAA: $apiKey")
         openai = OpenAI(
             token = apiKey,
             timeout = Timeout(socket = 120.seconds)
         )
     }
-
-
-
-
 
 
     suspend fun whisper(file: File): String {
@@ -112,7 +101,7 @@ class OpenAiHandler(private val settingsRepository: SettingsRepository) {
             messages = listOf(
                 ChatMessage(
                     role = ChatRole.System,
-                    content = "You will be provided with a transcription, and your task is to translate it into $language."
+                    content = "You will be provided with a text, and your task is to translate it into $language."
                 ),
                 ChatMessage(
                     role = ChatRole.User,
@@ -129,7 +118,10 @@ class OpenAiHandler(private val settingsRepository: SettingsRepository) {
             messages = listOf(
                 ChatMessage(
                     role = ChatRole.System,
-                    content = "Your task is to correct any spelling discrepancies in the transcribed text. Make the text look more presentable Add necessary punctuation such as periods, commas, capitalization, paragraphs, line breaks and use only the context provided. Use the same language the text is written in."
+                    content = "Your task is to correct any spelling discrepancies in the transcribed text." +
+                            " Make the text look more presentable." +
+                            " Add necessary punctuation such as periods, commas, capitalization, paragraphs, line breaks and use only the context provided." +
+                            " Use the same language the text is written in."
                 ),
                 ChatMessage(
                     role = ChatRole.User,

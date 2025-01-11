@@ -1,18 +1,16 @@
 package com.example.transcriptionapp
 
-import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.datastore.core.DataStore
-import androidx.datastore.dataStore
+import androidx.activity.viewModels
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transcriptionapp.model.SettingsRepository
-import com.example.transcriptionapp.model.UserPreferences
-import com.example.transcriptionapp.model.UserPreferencesSerializer
 import com.example.transcriptionapp.ui.screens.SettingsScreen
 import com.example.transcriptionapp.ui.screens.TranscriptionScreen
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
@@ -20,20 +18,24 @@ import com.example.transcriptionapp.viewmodel.SettingsViewModel
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
 import kotlinx.serialization.Serializable
 
-val Context.dataStore: DataStore<UserPreferences> by dataStore(
-  fileName = "user-preferences",
-  serializer = UserPreferencesSerializer
-)
 
 class MainActivity : ComponentActivity() {
 
+  private lateinit var settingsRepository: SettingsRepository
+  private val settingsViewModel: SettingsViewModel by viewModels {
+    object : ViewModelProvider.Factory {
+      override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        @Suppress("UNCHECKED_CAST")
+        return SettingsViewModel(settingsRepository) as T
+      }
+    }
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
+    settingsRepository = SettingsRepository((application as TranscriptionApp).dataStore)
 
-    val settingsRepository = SettingsRepository(dataStore)
-    val settingsViewModel = SettingsViewModel(settingsRepository)
     val transcriptionViewModel = TranscriptionViewModel(settingsRepository)
     enableEdgeToEdge()
     setContent {
