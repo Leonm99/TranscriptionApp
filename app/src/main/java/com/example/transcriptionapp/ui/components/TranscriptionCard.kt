@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,7 +28,6 @@ import java.util.Locale
 
 @Composable
 fun TranscriptionCard(transcription: String, timestamp: Long,  onCopyClicked: (String) -> Unit) {
-
     val formattedTimestamp = formatTimestamp(timestamp)
 
     Card(
@@ -81,6 +81,8 @@ fun TranscriptionCard(transcription: String, timestamp: Long,  onCopyClicked: (S
                     textAlign = TextAlign.Start,
                     style = MaterialTheme.typography.bodyMedium
                 )
+
+
             }
         }
     }
@@ -93,10 +95,11 @@ fun formatTimestamp(timestamp: Long): String {
     return format.format(date)
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun TranscriptionCardPreview() {
-//    TranscriptionCard(
-//        transcription = "This is a sample transcription that will be copied. This is a sample transcription that will be copied. This is a sample transcription that will be copied.",
-//        timestamp = System.currentTimeMillis())
-//}
+@Preview(showBackground = true)
+@Composable
+fun TranscriptionCardPreview() {
+    TranscriptionCard(
+        transcription = "This is a sample transcription that will be copied. This is a sample transcription that will be copied. This is a sample transcription that will be copied.",
+        timestamp = System.currentTimeMillis()
+        ,onCopyClicked = {  })
+}

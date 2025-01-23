@@ -1,5 +1,6 @@
 package com.example.transcriptionapp.api
 
+import android.util.Log
 import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
@@ -40,6 +41,7 @@ class OpenAiHandler(private val settingsRepository: SettingsRepository) {
             settingsRepository.userPreferencesFlow.collect { userPreferences ->
 
                 apiKey = userPreferences.userApiKey
+                Log.d("OpenAiHandler", "API Key: " + userPreferences.userApiKey)
                 language = userPreferences.selectedLanguage
                 model = userPreferences.selectedModel
                 isFormattingEnabled = userPreferences.formatSwitchState
@@ -50,6 +52,7 @@ class OpenAiHandler(private val settingsRepository: SettingsRepository) {
     }
 
     private fun initOpenAI(apiKey: String) {
+        Log.d("OpenAiHandler", "Initializing OpenAI with API Key: $apiKey")
         openai = OpenAI(
             token = apiKey,
             timeout = Timeout(socket = 120.seconds)
