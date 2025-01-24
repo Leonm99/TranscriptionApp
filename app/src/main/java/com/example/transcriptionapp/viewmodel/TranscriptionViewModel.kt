@@ -22,7 +22,12 @@ import kotlinx.coroutines.withContext
 
 data class TranscriptionState(
   val isLoading: Boolean = false,
-  val transcription: String? = null
+  val transcription: String = "Not Transcribed yet!",
+  val summary: String? = null,
+  val translation: String? = null,
+  val timestamp: Long = System.currentTimeMillis(),
+  val error: String? = null
+
 )
 private const val TAG = "TranscriptionViewModel"
  class TranscriptionViewModel(settingsRepository: SettingsRepository) : ViewModel() {
@@ -87,7 +92,7 @@ private const val TAG = "TranscriptionViewModel"
 
         _transcriptionState.value = _transcriptionState.value.copy(
           isLoading = false,
-          transcription = summaryResult
+          summary = summaryResult
 
         )
 
@@ -107,7 +112,7 @@ private const val TAG = "TranscriptionViewModel"
 
         _transcriptionState.value = _transcriptionState.value.copy(
           isLoading = false,
-          transcription = translateResult
+          translation = translateResult
 
         )
 

@@ -38,7 +38,7 @@ fun BottomSheet(
     finishAfter: Boolean? = false,
 ) {
     val showBottomSheet by viewModel.isBottomSheetVisible.collectAsState()
-    val (isLoading, transcription) = viewModel.transcriptionState.collectAsState(
+    val (isLoading, transcription, translation, summary, timestamp, error) = viewModel.transcriptionState.collectAsState(
         initial = TranscriptionState()
     ).value
     var isFullyExpanded by remember { mutableStateOf(false) }
@@ -74,14 +74,15 @@ fun BottomSheet(
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(100.dp))
                     } else {
-                        transcription?.let {
-                            TranscriptionCard(it, System.currentTimeMillis()) { transcription ->
+
+                            TranscriptionCard(transcription, summary = summary, translation = translation , timestamp) { text ->
                                 viewModel.copyToClipboard(
                                     context,
-                                    transcription
+                                    text
                                 )
                             }
                             Box(
+
                                 modifier = Modifier
                                     .fillMaxHeight(),
 
@@ -117,4 +118,4 @@ fun BottomSheet(
             }
         }
     }
-}
+
