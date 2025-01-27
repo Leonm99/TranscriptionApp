@@ -71,12 +71,18 @@ class OpenAiHandler(private val settingsRepository: SettingsRepository) {
             model = ModelId("whisper-1")
         )
         val useCorrection = isFormattingEnabled
-        var result = openai?.transcription(transcriptionRequest)?.text.orEmpty()
+        return try {
+            val result = openai?.transcription(transcriptionRequest)?.text ?: ""
 
-        if (useCorrection) {
-            result = correctSpelling(result)
+            if (useCorrection) {
+                correctSpelling(result)
+            } else {
+                result
+            }
+        } catch (e: Exception) {
+            Log.e("OpenAiHandler", "Error during transcription: ${e.message}", e)
+            e.message.toString()
         }
-        return result
     }
 
     suspend fun summarize(userText: String): String {
