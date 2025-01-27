@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.ui.components.TranscriptionCard
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
+import com.example.transcriptionapp.viewmodel.formatTimestamp
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +60,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: TranscriptionVie
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally,
   ) {
-      TranscriptionCard("This is a TEST", "This is a TEST", "This is a TEST", timestamp = System.currentTimeMillis(),onCopyClicked = {  })
+      TranscriptionCard("This is a TEST", "This is a TEST", "This is a TEST", timestamp = formatTimestamp(System.currentTimeMillis()),onCopyClicked = {  })
     Button(onClick = { viewModel.buttonOnClick(launcher) }) { Text("Pick Audio") }
 
   }

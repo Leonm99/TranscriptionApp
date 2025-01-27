@@ -10,7 +10,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.OpenAiHandler
+import com.example.transcriptionapp.com.example.transcriptionapp.api.MockOpenAiHandler
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.util.FileUtils
 import kotlinx.coroutines.Dispatchers
@@ -19,20 +19,30 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class TranscriptionState(
-  val isLoading: Boolean = false,
-  val transcription: String = "Not Transcribed yet!",
-  val summary: String? = null,
-  val translation: String? = null,
-  val timestamp: Long = System.currentTimeMillis(),
-  val error: String? = null
+    val isLoading: Boolean = false,
+    val transcription: String = "Not Transcribed yet!",
+    val summary: String? = null,
+    val translation: String? = null,
+    val timestamp: String = formatTimestamp(System.currentTimeMillis()),
+    val error: String? = null
 
 )
+
+fun formatTimestamp(timestamp: Long): String {
+    val date = Date(timestamp)
+    val format = SimpleDateFormat("dd.MM.yyyy • HH:mm", Locale.getDefault())
+    return format.format(date)
+}
+
 private const val TAG = "TranscriptionViewModel"
  class TranscriptionViewModel(settingsRepository: SettingsRepository) : ViewModel() {
 
-  val openAiHandler = OpenAiHandler(settingsRepository)
+  val openAiHandler = MockOpenAiHandler(settingsRepository)
   private val _transcriptionState = MutableStateFlow(TranscriptionState())
   val transcriptionState: StateFlow<TranscriptionState> = _transcriptionState.asStateFlow()
 
@@ -96,6 +106,8 @@ private const val TAG = "TranscriptionViewModel"
 
         )
 
+          Log.d(TAG, "Summary: " + transcriptionState.value.summary)
+
       } catch (e: Exception) {
         Log.e(TAG, "Error summarizing text", e)
       }
@@ -115,7 +127,7 @@ private const val TAG = "TranscriptionViewModel"
           translation = translateResult
 
         )
-
+            Log.d(TAG, "Summary: " + transcriptionState.value.translation)
       } catch (e: Exception) {
         Log.e(TAG, "Error Translating text", e)
       }

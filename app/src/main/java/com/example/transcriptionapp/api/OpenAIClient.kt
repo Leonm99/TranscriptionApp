@@ -80,12 +80,13 @@ class OpenAiHandler(private val settingsRepository: SettingsRepository) {
     }
 
     suspend fun summarize(userText: String): String {
+        val language = language.uppercase()
         val chatCompletionRequest = ChatCompletionRequest(
             model = ModelId(model),
             messages = listOf(
                 ChatMessage(
                     role = ChatRole.System,
-                    content = "You will be provided with a transcription, and your task is to summarize it in the SAME language it's written in."
+                    content = "You will be provided with a transcription, and your task is to summarize it in $language"
                 ),
                 ChatMessage(
                     role = ChatRole.User,
