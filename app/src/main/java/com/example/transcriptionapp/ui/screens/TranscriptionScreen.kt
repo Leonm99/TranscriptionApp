@@ -60,7 +60,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: TranscriptionVie
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally,
   ) {
-      TranscriptionCard("This is a TEST", "This is a TEST", "This is a TEST", timestamp = formatTimestamp(System.currentTimeMillis()),onCopyClicked = {  })
+      TranscriptionCard("This is a TEST", "This is a TEST", "This is a TEST".repeat(50), timestamp = formatTimestamp(System.currentTimeMillis()),onCopyClicked = {  })
     Button(onClick = { viewModel.buttonOnClick(launcher) }) { Text("Pick Audio") }
 
   }

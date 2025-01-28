@@ -2,7 +2,6 @@ package com.example.transcriptionapp.ui.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseInOut
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -58,31 +57,23 @@ fun TranscriptionCard(
     shape = RoundedCornerShape(12.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
-
-    Column(
-      modifier = Modifier.fillMaxWidth(),
-      verticalArrangement = Arrangement.Center,
-      horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-      Box(modifier = Modifier.fillMaxWidth()) {
-
-
-        HorizontalPager(
-          state = pagerState,
-          modifier =
-            Modifier.wrapContentHeight()
-              .heightIn(max = 300.dp)
-              .padding(vertical = 10.dp, horizontal = 10.dp,)
-              .animateContentSize(
-                animationSpec =
-                  tween(
-                    durationMillis = 175, // Adjust the duration as needed
-                    easing = EaseInOut, // Optional, change if desired
-                  )
-              ),
-        ) { page ->
-          val scrollState = rememberScrollState()
-
+    Column(modifier = Modifier) {
+      HorizontalPager(
+        state = pagerState,
+        modifier =
+          Modifier.wrapContentHeight()
+            .heightIn(max = 300.dp)
+            .padding(vertical = 16.dp, horizontal = 10.dp)
+            .animateContentSize(
+              animationSpec =
+                tween(
+                  durationMillis = 175, // Adjust the duration as needed
+                  easing = EaseInOut, // Optional, change if desired
+                )
+            ),
+      ) { page ->
+        val scrollState = rememberScrollState()
+        Box(modifier = Modifier.fillMaxWidth().heightIn(max = 275.dp)) {
           Column(modifier = Modifier.fillMaxWidth()) {
             if (page == 0) {
               Text(text = "Transcription", style = MaterialTheme.typography.titleMedium)
@@ -153,20 +144,24 @@ fun TranscriptionCard(
               )
             }
           }
-        }
 
           IconButton(
-              onClick = { onCopyClicked(
-                  if (pagerState.currentPage == 0) transcription else if (pagerState.currentPage == 1 && summary != null) summary else translation ?: "WOW HOW DID THIS HAPPEN?!"
-              ) },
-              modifier = Modifier.align(Alignment.TopEnd),
-          ) {
-              Icon(
-                  Icons.Filled.ContentCopy,
-                  contentDescription = "Copy",
-                  modifier = Modifier.size(20.dp),
+            onClick = {
+              onCopyClicked(
+                if (pagerState.currentPage == 0) transcription
+                else if (pagerState.currentPage == 1 && summary != null) summary
+                else translation ?: "WOW HOW DID THIS HAPPEN?!"
               )
+            },
+            modifier = Modifier.align(Alignment.TopEnd),
+          ) {
+            Icon(
+              Icons.Filled.ContentCopy,
+              contentDescription = "Copy",
+              modifier = Modifier.size(20.dp),
+            )
           }
+        }
       }
 
       Row(
@@ -176,7 +171,7 @@ fun TranscriptionCard(
       ) {
         repeat(pagerState.pageCount) { iteration ->
           val color = if (pagerState.currentPage == iteration) Color.DarkGray else Color.LightGray
-          Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(10.dp))
+          Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(5.dp))
         }
       }
     }
@@ -187,12 +182,9 @@ fun TranscriptionCard(
 @Composable
 fun TranscriptionCardPreview() {
   TranscriptionCard(
-    transcription =
-      "This is a sample transcription that will be copied. " +
-        "This is a sample transcription that will be copied. " +
-        "This is a sample transcription that will be copied.",
+    transcription = "This is a sample transcription that will be copied. ".repeat(20),
     summary = "This is a sample summary.",
-    translation = "This is a sample translation.",
+    translation = "This is a sample translation.".repeat(20),
     timestamp = formatTimestamp(System.currentTimeMillis()),
     onCopyClicked = {},
   )
