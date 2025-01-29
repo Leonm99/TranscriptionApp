@@ -13,6 +13,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.transcriptionapp.TranscriptionApp.DatabaseProvider
+import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.ui.screens.ShareScreen
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
@@ -23,13 +25,12 @@ import com.example.transcriptionapp.util.FileUtils.saveFileToCache as saveToCach
 
 private const val TAG = "ShareActivity"
 
-
 class ShareActivity : ComponentActivity() {
   private var sharedUrlCached: String = ""
 
   private lateinit var settingsRepository: SettingsRepository
   private lateinit var transcriptionViewModel: TranscriptionViewModel
-
+  private val dao: TranscriptionDao = DatabaseProvider.getDatabase(application).transcriptionDao()
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
@@ -42,31 +43,22 @@ class ShareActivity : ComponentActivity() {
     enableEdgeToEdge()
 
     settingsRepository = SettingsRepository((application as TranscriptionApp).dataStore)
-    transcriptionViewModel = TranscriptionViewModel(settingsRepository)
-
+    transcriptionViewModel = TranscriptionViewModel(settingsRepository, dao)
 
     window.run {
       setBackgroundDrawable(ColorDrawable(0))
-      setLayout(
-          WindowManager.LayoutParams.MATCH_PARENT,
-          WindowManager.LayoutParams.MATCH_PARENT,
-      )
+      setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
       setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
     }
 
-    setContent { TranscriptionAppTheme {
-      val navController = rememberNavController()
-      NavHost(navController = navController, startDestination = ShareScreen) {
-
-
-        composable<ShareScreen> {
-          ShareScreen(transcriptionViewModel, this@ShareActivity)
+    setContent {
+      TranscriptionAppTheme {
+        val navController = rememberNavController()
+        NavHost(navController = navController, startDestination = ShareScreen) {
+          composable<ShareScreen> { ShareScreen(transcriptionViewModel, this@ShareActivity) }
         }
-
       }
-
-
-    } }
+    }
 
     handleIntent(intent)
   }
@@ -77,13 +69,12 @@ class ShareActivity : ComponentActivity() {
         intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true -> {
           val uri = getUriFromIntent(intent)
 
-            val audioFile = saveToCache(this, uri)
-            audioFile?.let { file ->
-              Log.d("ReceiveIntentActivity", "Audio file path: ${file.absolutePath}")
-              // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
-              transcriptionViewModel.onAudioSelected(Uri.fromFile(file), this)
-
-            }
+          val audioFile = saveToCache(this, uri)
+          audioFile?.let { file ->
+            Log.d("ReceiveIntentActivity", "Audio file path: ${file.absolutePath}")
+            // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
+            transcriptionViewModel.onAudioSelected(Uri.fromFile(file), this)
+          }
         }
         intent.type?.startsWith("text/") == true -> {
           val link = matchUrlFromSharedText(intent.extras?.getString(Intent.EXTRA_TEXT))
@@ -110,5 +101,4 @@ class ShareActivity : ComponentActivity() {
   }
 }
 
-@Serializable
-object ShareScreen
+@Serializable object ShareScreen
