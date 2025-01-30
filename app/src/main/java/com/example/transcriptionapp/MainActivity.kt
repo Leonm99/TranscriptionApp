@@ -11,7 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transcriptionapp.TranscriptionApp.DatabaseProvider
-import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionDao
+import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.ui.screens.SettingsScreen
 import com.example.transcriptionapp.ui.screens.TranscriptionScreen
@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
     object : ViewModelProvider.Factory {
       override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return SettingsViewModel(settingsRepository) as T
+        return SettingsViewModel(settingsRepository, dao) as T
       }
     }
   }

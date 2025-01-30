@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.dataStore
 import androidx.room.Room
-import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionDatabase
+import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDatabase
 import com.example.transcriptionapp.model.UserPreferences
 import com.example.transcriptionapp.model.UserPreferencesSerializer
 

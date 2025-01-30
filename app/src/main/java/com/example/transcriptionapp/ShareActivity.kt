@@ -14,7 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transcriptionapp.TranscriptionApp.DatabaseProvider
-import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionDao
+import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.ui.screens.ShareScreen
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
