@@ -11,24 +11,26 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.api.MockOpenAiHandler
+import com.example.transcriptionapp.com.example.transcriptionapp.model.Transcription
+import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.util.FileUtils
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class TranscriptionState(
   val isLoading: Boolean = false,
-  val transcription: String = "Not Transcribed yet!",
+  val transcription: String? = null,
   val summary: String? = null,
   val translation: String? = null,
-  val timestamp: String = formatTimestamp(System.currentTimeMillis()),
+  val timestamp: String? = null,
   val error: String? = null,
 )
 
@@ -40,7 +42,8 @@ fun formatTimestamp(timestamp: Long): String {
 
 private const val TAG = "TranscriptionViewModel"
 
-class TranscriptionViewModel(settingsRepository: SettingsRepository) : ViewModel() {
+class TranscriptionViewModel(settingsRepository: SettingsRepository, val dao: TranscriptionDao) :
+  ViewModel() {
 
   val openAiHandler = MockOpenAiHandler(settingsRepository)
   private val _transcriptionState = MutableStateFlow(TranscriptionState())
@@ -69,6 +72,7 @@ class TranscriptionViewModel(settingsRepository: SettingsRepository) : ViewModel
             _transcriptionState.value.copy(
               isLoading = false,
               transcription = openAiHandler.whisper(audioFile!!),
+              timestamp = formatTimestamp(System.currentTimeMillis()),
             )
         }
       } catch (e: Exception) {
@@ -89,7 +93,7 @@ class TranscriptionViewModel(settingsRepository: SettingsRepository) : ViewModel
     launcher.launch(intent)
   }
 
-  fun summarize() {
+  fun onSummarizeClick() {
     viewModelScope.launch {
       _transcriptionState.value = _transcriptionState.value.copy(isLoading = true)
       try {
@@ -108,7 +112,7 @@ class TranscriptionViewModel(settingsRepository: SettingsRepository) : ViewModel
     }
   }
 
-  fun translate() {
+  fun onTranslateClick() {
     viewModelScope.launch {
       _transcriptionState.value = _transcriptionState.value.copy(isLoading = true)
       try {
@@ -125,6 +129,18 @@ class TranscriptionViewModel(settingsRepository: SettingsRepository) : ViewModel
         Log.e(TAG, "Error Translating text", e)
       }
     }
+  }
+
+  fun onSaveClick() {
+    val datascription =
+      Transcription(
+        transcriptionText = transcriptionState.value.transcription.orEmpty(),
+        summaryText = transcriptionState.value.summary,
+        translationText = transcriptionState.value.translation,
+        timestamp = transcriptionState.value.timestamp,
+      )
+
+    viewModelScope.launch { dao.insert(datascription) }
   }
 
   fun copyToClipboard(context: Context, text: String) {

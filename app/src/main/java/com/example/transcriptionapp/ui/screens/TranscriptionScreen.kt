@@ -25,44 +25,47 @@ import com.example.transcriptionapp.ui.components.TranscriptionCard
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
 import com.example.transcriptionapp.viewmodel.formatTimestamp
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: TranscriptionViewModel) {
 
   val activity = LocalContext.current
   val launcher =
-      rememberLauncherForActivityResult(
-          contract = ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-              result.data?.data?.let { uri -> viewModel.onAudioSelected(uri, activity) }
-            }
-          }
+    rememberLauncherForActivityResult(
+      contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+      if (result.resultCode == Activity.RESULT_OK) {
+        result.data?.data?.let { uri -> viewModel.onAudioSelected(uri, activity) }
+      }
+    }
 
   TopAppBar(
-      title = { Text("TranscriptionApp") },
-      colors =
-          TopAppBarDefaults.topAppBarColors(
-              containerColor = MaterialTheme.colorScheme.primaryContainer,
-              titleContentColor = MaterialTheme.colorScheme.primary,
-          ),
-      actions = {
-        IconButton(
-            onClick = {
-                 onSettingsClick()
-            }) {
-              Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
-            }
-      })
+    title = { Text("TranscriptionApp") },
+    colors =
+      TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        titleContentColor = MaterialTheme.colorScheme.primary,
+      ),
+    actions = {
+      IconButton(onClick = { onSettingsClick() }) {
+        Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
+      }
+    },
+  )
 
   Column(
-      modifier = Modifier.fillMaxSize(),
-      verticalArrangement = Arrangement.Center,
-      horizontalAlignment = Alignment.CenterHorizontally,
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.Center,
+    horizontalAlignment = Alignment.CenterHorizontally,
   ) {
-      TranscriptionCard("This is a TEST", "This is a TEST", "This is a TEST".repeat(50), timestamp = formatTimestamp(System.currentTimeMillis()),onCopyClicked = {  })
+    TranscriptionCard(
+      transcription = "This is a transcription preview. ".repeat(5),
+      summary = "This is a summary preview. ".repeat(10),
+      translation = "This is a translation preview. ".repeat(30),
+      timestamp = formatTimestamp(System.currentTimeMillis()),
+      onCopyClicked = {},
+    )
     Button(onClick = { viewModel.buttonOnClick(launcher) }) { Text("Pick Audio") }
-
   }
-    BottomSheet(viewModel)
+  BottomSheet(viewModel)
 }

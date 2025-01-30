@@ -1,6 +1,5 @@
 package com.example.transcriptionapp.ui.components
 
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,92 +25,76 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.viewmodel.TranscriptionState
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
-import com.example.transcriptionapp.ui.components.TranscriptionCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheet(
-    viewModel: TranscriptionViewModel,
-    activity: ComponentActivity? = null,
-    finishAfter: Boolean? = false,
+  viewModel: TranscriptionViewModel,
+  activity: ComponentActivity? = null,
+  finishAfter: Boolean? = false,
 ) {
-    val showBottomSheet by viewModel.isBottomSheetVisible.collectAsState()
-    val (isLoading, transcription, summary, translation, timestamp, _) = viewModel.transcriptionState.collectAsState(
-        initial = TranscriptionState()
-    ).value
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val context = LocalContext.current
+  val showBottomSheet by viewModel.isBottomSheetVisible.collectAsState()
+  val (isLoading, transcription, summary, translation, timestamp, _) =
+    viewModel.transcriptionState.collectAsState(initial = TranscriptionState()).value
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+  val context = LocalContext.current
 
-    // Get screen height and calculate half of it
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val halfScreenHeight = screenHeight / 2
-    Box(modifier = Modifier.fillMaxSize()) {
-
-        if (showBottomSheet) {
-            ModalBottomSheet(
-                modifier = Modifier
-                    .padding(top = halfScreenHeight),
-                sheetState = sheetState,
-                onDismissRequest = {
-                    viewModel.hideBottomSheet()
-                    if (activity != null && finishAfter == true) {
-                        activity.finish()
-                    }
-                }
+  val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+  val halfScreenHeight = screenHeight / 2
+  Box(modifier = Modifier.fillMaxSize()) {
+    if (showBottomSheet) {
+      ModalBottomSheet(
+        modifier = Modifier.padding(top = halfScreenHeight),
+        sheetState = sheetState,
+        onDismissRequest = {
+          viewModel.hideBottomSheet()
+          if (activity != null && finishAfter == true) {
+            activity.finish()
+          }
+        },
+      ) {
+        Column(
+          modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
+          horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+          if (isLoading) {
+            Box(
+              modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+              contentAlignment = Alignment.Center,
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-
-                    if (isLoading) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(),
-                            contentAlignment = Alignment.Center){
-                            CircularProgressIndicator(modifier = Modifier.size(100.dp))
-                            Text(modifier = Modifier.offset(y = (70).dp),
-                                text = "Loading...")
-                        }
-
-                    } else {
-                        Column(modifier = Modifier.weight(1f)) {
-                            TranscriptionCard(transcription, summary, translation, timestamp) { text ->
-                                viewModel.copyToClipboard(context, text)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp)) // Add some space between the card and the button.
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            StickyBottomSheetButton(
-                                onClick = { viewModel.summarize() },
-                                text = "Summarize",
-                            )
-                            StickyBottomSheetButton(
-                                onClick = { viewModel.translate() },
-                                text = "Translate"
-                            )
-                        }
-
-                    }
-                    }
-                }
+              CircularProgressIndicator(modifier = Modifier.size(100.dp))
+              Text(modifier = Modifier.offset(y = (70).dp), text = "Loading...")
             }
-        }
-    }
+          } else {
+            Column(modifier = Modifier.weight(1f)) {
+              TranscriptionCard(transcription!!, summary, translation, timestamp!!) { text ->
+                viewModel.copyToClipboard(context, text)
+              }
+            }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+              modifier = Modifier.fillMaxWidth().padding(16.dp),
+              horizontalArrangement = Arrangement.SpaceEvenly,
+              verticalAlignment = Alignment.CenterVertically,
+            ) {
+              StickyBottomSheetButton(
+                onClick = { viewModel.onSummarizeClick() },
+                text = "Summarize",
+              )
+              StickyBottomSheetButton(
+                onClick = { viewModel.onTranslateClick() },
+                text = "Translate",
+              )
+              StickyBottomSheetButton(onClick = { viewModel.onSaveClick() }, text = "Save")
+            }
+          }
+        }
+      }
+    }
+  }
+}
