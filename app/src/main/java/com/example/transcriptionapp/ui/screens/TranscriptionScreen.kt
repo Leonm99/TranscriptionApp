@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -37,6 +39,8 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: TranscriptionVie
 
   val transcriptionListState = viewModel.transcriptionList.collectAsState()
   val transcriptionList = transcriptionListState.value
+  val isLoadingState = viewModel.isLoading.collectAsState()
+  val isBottomSheetVisibleState = viewModel.isBottomSheetVisible.collectAsState()
 
   val activity = LocalContext.current
   val launcher =
@@ -72,7 +76,11 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: TranscriptionVie
       }
     }
   }
+
   Box(modifier = Modifier.fillMaxSize()) {
+    if (isLoadingState.value && !isBottomSheetVisibleState.value) {
+      CircularProgressIndicator(modifier = Modifier.size(50.dp).align(Alignment.Center))
+    }
     FloatingActionButton(
       elevation = FloatingActionButtonDefaults.elevation(),
       onClick = { viewModel.buttonOnClick(launcher) },

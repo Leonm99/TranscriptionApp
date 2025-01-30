@@ -66,7 +66,7 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
 
   Card(
     modifier =
-      Modifier.fillMaxWidth().wrapContentHeight().padding(5.dp).heightIn(max = 375.dp, min = 50.dp),
+      Modifier.fillMaxWidth().wrapContentHeight().padding(5.dp).heightIn(max = 500.dp, min = 50.dp),
     shape = RoundedCornerShape(12.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
@@ -79,8 +79,8 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
         HorizontalPager(
           state = pagerState,
           modifier =
-            Modifier.wrapContentHeight()
-              .heightIn(max = 280.dp)
+            Modifier.fillMaxWidth()
+              .heightIn(min = 50.dp, max = 300.dp)
               .padding(vertical = 10.dp, horizontal = 10.dp)
               .animateContentSize(animationSpec = tween(durationMillis = 175, easing = EaseInOut)),
         ) { page ->
@@ -179,13 +179,12 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
       }
 
       Row(
-        Modifier.fillMaxWidth().wrapContentHeight().padding(bottom = 8.dp),
+        Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 8.dp),
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
       ) {
         repeat(pagerState.pageCount) { iteration ->
           val color = if (pagerState.currentPage == iteration) Color.DarkGray else Color.LightGray
-          Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(6.dp))
+          Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(4.dp))
         }
       }
     }

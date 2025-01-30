@@ -10,7 +10,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.MockOpenAiHandler
+import com.example.transcriptionapp.api.OpenAiHandler
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
@@ -41,7 +41,7 @@ class TranscriptionViewModel(
 
   private val transcriptionRepository = TranscriptionRepository(transcriptionDao)
 
-  val openAiHandler = MockOpenAiHandler(settingsRepository)
+  val openAiHandler = OpenAiHandler(settingsRepository)
 
   private val _isLoading = MutableStateFlow(false)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -70,8 +70,10 @@ class TranscriptionViewModel(
 
   init {
     viewModelScope.launch {
+      _isLoading.value = true
       transcriptionRepository.allTranscriptions.collect { transcriptions ->
         _transcriptionList.value = transcriptions
+        _isLoading.value = false
       }
     }
   }
