@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.com.example.transcriptionapp.ui.components.verticalScrollbar
 import com.example.transcriptionapp.viewmodel.formatTimestamp
 
@@ -44,27 +45,28 @@ import com.example.transcriptionapp.viewmodel.formatTimestamp
 @Preview
 fun TranscriptionCardPreview() {
   TranscriptionCard(
-    transcription = "This is a transcription preview. ".repeat(5),
-    summary = "This is a summary preview. ".repeat(10),
-    translation = "This is a translation preview. ".repeat(20),
-    timestamp = formatTimestamp(System.currentTimeMillis()),
+    transcription =
+      Transcription(
+        0,
+        "Transcription text",
+        "Summary text",
+        "Translation text",
+        formatTimestamp(System.currentTimeMillis()),
+      )
   ) {}
 }
 
 @Composable
-fun TranscriptionCard(
-  transcription: String,
-  summary: String?,
-  translation: String?,
-  timestamp: String,
-  onCopyClicked: (String) -> Unit,
-) {
-  val pageCount = 1 + (if (summary != null) 1 else 0) + (if (translation != null) 1 else 0)
+fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> Unit) {
+  val pageCount =
+    1 +
+      (if (transcription.summaryText != null) 1 else 0) +
+      (if (transcription.translationText != null) 1 else 0)
   val pagerState = rememberPagerState(pageCount = { pageCount })
 
   Card(
     modifier =
-      Modifier.fillMaxWidth().wrapContentHeight().padding(5.dp).heightIn(max = 375.dp, min = 50.dp),
+      Modifier.fillMaxWidth().wrapContentHeight().padding(5.dp).heightIn(max = 500.dp, min = 50.dp),
     shape = RoundedCornerShape(12.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
@@ -77,8 +79,8 @@ fun TranscriptionCard(
         HorizontalPager(
           state = pagerState,
           modifier =
-            Modifier.wrapContentHeight()
-              .heightIn(max = 280.dp)
+            Modifier.fillMaxWidth()
+              .heightIn(min = 50.dp, max = 300.dp)
               .padding(vertical = 10.dp, horizontal = 10.dp)
               .animateContentSize(animationSpec = tween(durationMillis = 175, easing = EaseInOut)),
         ) { page ->
@@ -90,7 +92,7 @@ fun TranscriptionCard(
 
               Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = timestamp,
+                text = transcription.timestamp!!,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
               )
@@ -102,16 +104,16 @@ fun TranscriptionCard(
                     .nestedScroll(rememberNestedScrollInteropConnection())
                     .verticalScroll(scrollState)
                     .verticalScrollbar(scrollState),
-                text = transcription,
+                text = transcription.transcriptionText,
                 textAlign = TextAlign.Start,
                 style = MaterialTheme.typography.bodyMedium,
               )
-            } else if (page == 1 && !summary.isNullOrEmpty()) {
+            } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
               Text(text = "Summary", style = MaterialTheme.typography.titleMedium)
 
               Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = timestamp,
+                text = transcription.timestamp!!,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
               )
@@ -123,19 +125,20 @@ fun TranscriptionCard(
                     .nestedScroll(rememberNestedScrollInteropConnection())
                     .verticalScroll(scrollState)
                     .verticalScrollbar(scrollState),
-                text = summary,
+                text = transcription.summaryText,
                 textAlign = TextAlign.Start,
                 style = MaterialTheme.typography.bodyMedium,
               )
             } else if (
-              page == (if (!summary.isNullOrEmpty()) 2 else 1) && !translation.isNullOrEmpty()
+              page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
+                !transcription.translationText.isNullOrEmpty()
             ) {
 
               Text(text = "Translation", style = MaterialTheme.typography.titleMedium)
 
               Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = timestamp,
+                text = transcription.timestamp!!,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
               )
@@ -148,7 +151,7 @@ fun TranscriptionCard(
                     .nestedScroll(rememberNestedScrollInteropConnection())
                     .verticalScroll(scrollState)
                     .verticalScrollbar(scrollState),
-                text = translation,
+                text = transcription.translationText,
                 textAlign = TextAlign.Start,
                 style = MaterialTheme.typography.bodyMedium,
               )
@@ -159,9 +162,10 @@ fun TranscriptionCard(
         IconButton(
           onClick = {
             onCopyClicked(
-              if (pagerState.currentPage == 0) transcription
-              else if (pagerState.currentPage == 1 && summary != null) summary
-              else translation ?: "WOW HOW DID THIS HAPPEN?!"
+              if (pagerState.currentPage == 0) transcription.transcriptionText
+              else if (pagerState.currentPage == 1 && transcription.summaryText != null)
+                transcription.summaryText
+              else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
             )
           },
           modifier = Modifier.align(Alignment.TopEnd),
@@ -175,13 +179,12 @@ fun TranscriptionCard(
       }
 
       Row(
-        Modifier.fillMaxWidth().wrapContentHeight().padding(bottom = 8.dp),
+        Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 8.dp),
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
       ) {
         repeat(pagerState.pageCount) { iteration ->
           val color = if (pagerState.currentPage == iteration) Color.DarkGray else Color.LightGray
-          Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(6.dp))
+          Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(4.dp))
         }
       }
     }

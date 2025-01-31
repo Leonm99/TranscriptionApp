@@ -2,6 +2,8 @@ package com.example.transcriptionapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
+import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.UserPreferences
 import kotlinx.coroutines.Dispatchers
@@ -14,58 +16,58 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "SettingsViewModel"
 
-enum class DialogType { API, LANGUAGE, MODEL, DELETE }
+enum class DialogType {
+  API,
+  LANGUAGE,
+  MODEL,
+  DELETE,
+}
 
-class SettingsViewModel(private val settingsRepository: SettingsRepository) : ViewModel() {
+class SettingsViewModel(private val settingsRepository: SettingsRepository, dao: TranscriptionDao) :
+  ViewModel() {
 
-    val settings: StateFlow<UserPreferences> = settingsRepository.userPreferencesFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserPreferences())
+  private val transcriptionRepository = TranscriptionRepository(dao)
 
+  val settings: StateFlow<UserPreferences> =
+    settingsRepository.userPreferencesFlow.stateIn(
+      viewModelScope,
+      SharingStarted.WhileSubscribed(5000),
+      UserPreferences(),
+    )
 
-    private val _showDialog = MutableStateFlow(false)
-    var showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
+  private val _showDialog = MutableStateFlow(false)
+  var showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
-    private val _dialogType = MutableStateFlow(DialogType.API)
-    var dialogType: StateFlow<DialogType> = _dialogType.asStateFlow()
+  private val _dialogType = MutableStateFlow(DialogType.API)
+  var dialogType: StateFlow<DialogType> = _dialogType.asStateFlow()
 
+  fun showDialog(type: DialogType = DialogType.API) {
+    _dialogType.value = type
+    _showDialog.value = true
+  }
 
+  fun hideDialog() {
+    _showDialog.value = false
+  }
 
+  fun setUserApiKey(key: String) {
 
-    fun showDialog(type: DialogType = DialogType.API) {
-        _dialogType.value = type
-        _showDialog.value = true
-    }
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setUserApiKey(key) }
+  }
 
-        fun hideDialog() {
-            _showDialog.value = false
-        }
+  fun deleteDatabase() {
+    viewModelScope.launch(Dispatchers.IO) { transcriptionRepository.deleteAllTranscriptions() }
+  }
 
-        fun setUserApiKey(key: String) {
+  fun setSelectedLanguage(language: String) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setLanguage(language) }
+  }
 
-            viewModelScope.launch(Dispatchers.IO) {
-                 settingsRepository.setUserApiKey(key)
-            }
+  fun setSelectedModel(model: String) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setModel(model) }
+  }
 
-
-        }
-
-    fun setSelectedLanguage(language: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.setLanguage(language)
-        }
-    }
-
-    fun setSelectedModel(model: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            settingsRepository.setModel(model)
-        }
-    }
-
-    fun updateSwitchState(newState: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-              settingsRepository.setFormatSwitchState(newState)
-        }
-    }
-
-
+  fun updateSwitchState(newState: Boolean) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setFormatSwitchState(newState) }
+  }
 }

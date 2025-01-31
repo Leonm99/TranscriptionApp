@@ -10,9 +10,10 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.MockOpenAiHandler
-import com.example.transcriptionapp.com.example.transcriptionapp.model.Transcription
-import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionDao
+import com.example.transcriptionapp.api.OpenAiHandler
+import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
+import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
+import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.util.FileUtils
 import kotlinx.coroutines.Dispatchers
@@ -25,15 +26,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-data class TranscriptionState(
-  val isLoading: Boolean = false,
-  val transcription: String? = null,
-  val summary: String? = null,
-  val translation: String? = null,
-  val timestamp: String? = null,
-  val error: String? = null,
-)
-
 fun formatTimestamp(timestamp: Long): String {
   val date = Date(timestamp)
   val format = SimpleDateFormat("dd.MM.yyyy • HH:mm", Locale.getDefault())
@@ -42,25 +34,55 @@ fun formatTimestamp(timestamp: Long): String {
 
 private const val TAG = "TranscriptionViewModel"
 
-class TranscriptionViewModel(settingsRepository: SettingsRepository, val dao: TranscriptionDao) :
-  ViewModel() {
+class TranscriptionViewModel(
+  settingsRepository: SettingsRepository,
+  transcriptionDao: TranscriptionDao,
+) : ViewModel() {
 
-  val openAiHandler = MockOpenAiHandler(settingsRepository)
-  private val _transcriptionState = MutableStateFlow(TranscriptionState())
-  val transcriptionState: StateFlow<TranscriptionState> = _transcriptionState.asStateFlow()
+  private val transcriptionRepository = TranscriptionRepository(transcriptionDao)
+
+  val openAiHandler = OpenAiHandler(settingsRepository)
+
+  private val _isLoading = MutableStateFlow(false)
+  val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+  private val _transcription =
+    MutableStateFlow(
+      Transcription(
+        id = 0,
+        transcriptionText = "",
+        summaryText = null,
+        translationText = null,
+        timestamp = null,
+      )
+    )
+  val transcription: StateFlow<Transcription> = _transcription.asStateFlow()
 
   private val _isBottomSheetVisible = MutableStateFlow(false)
   val isBottomSheetVisible: StateFlow<Boolean> = _isBottomSheetVisible.asStateFlow()
 
+  private val _transcriptionList = MutableStateFlow<List<Transcription>>(emptyList())
+  val transcriptionList: StateFlow<List<Transcription>> = _transcriptionList.asStateFlow()
+
   fun hideBottomSheet() {
     _isBottomSheetVisible.value = false
+  }
+
+  init {
+    viewModelScope.launch {
+      _isLoading.value = true
+      transcriptionRepository.allTranscriptions.collect { transcriptions ->
+        _transcriptionList.value = transcriptions
+        _isLoading.value = false
+      }
+    }
   }
 
   fun onAudioSelected(audioUri: Uri, context: Context) {
     viewModelScope.launch {
       withContext(Dispatchers.Main) {
         _isBottomSheetVisible.value = true
-        _transcriptionState.value = _transcriptionState.value.copy(isLoading = true)
+        _isLoading.value = true
       }
 
       try {
@@ -68,17 +90,17 @@ class TranscriptionViewModel(settingsRepository: SettingsRepository, val dao: Tr
         withContext(Dispatchers.IO) {
           Log.d(TAG, "Transcribing audio...")
 
-          _transcriptionState.value =
-            _transcriptionState.value.copy(
-              isLoading = false,
-              transcription = openAiHandler.whisper(audioFile!!),
+          _transcription.value =
+            _transcription.value.copy(
+              transcriptionText = openAiHandler.whisper(audioFile!!),
               timestamp = formatTimestamp(System.currentTimeMillis()),
             )
+          _isLoading.value = false
         }
       } catch (e: Exception) {
         // Handle error, e.g., update UI with error message
         Log.e(TAG, "Error transcribing audio", e)
-        _transcriptionState.value = _transcriptionState.value.copy(isLoading = false)
+        _isLoading.value = false
         // ...
       }
     }
@@ -95,17 +117,17 @@ class TranscriptionViewModel(settingsRepository: SettingsRepository, val dao: Tr
 
   fun onSummarizeClick() {
     viewModelScope.launch {
-      _transcriptionState.value = _transcriptionState.value.copy(isLoading = true)
+      _isLoading.value = true
       try {
         val summaryResult =
           withContext(Dispatchers.IO) {
-            openAiHandler.summarize(transcriptionState.value.transcription.orEmpty())
+            openAiHandler.summarize(transcription.value.transcriptionText)
           }
 
-        _transcriptionState.value =
-          _transcriptionState.value.copy(isLoading = false, summary = summaryResult)
+        _transcription.value = _transcription.value.copy(summaryText = summaryResult)
+        _isLoading.value = false
 
-        Log.d(TAG, "Summary: " + transcriptionState.value.summary)
+        Log.d(TAG, "Summary: " + transcription.value.summaryText)
       } catch (e: Exception) {
         Log.e(TAG, "Error summarizing text", e)
       }
@@ -114,17 +136,17 @@ class TranscriptionViewModel(settingsRepository: SettingsRepository, val dao: Tr
 
   fun onTranslateClick() {
     viewModelScope.launch {
-      _transcriptionState.value = _transcriptionState.value.copy(isLoading = true)
+      _isLoading.value = true
       try {
         val translateResult =
           withContext(Dispatchers.IO) {
-            openAiHandler.translate(transcriptionState.value.transcription.orEmpty())
+            openAiHandler.translate(transcription.value.transcriptionText)
           }
 
-        _transcriptionState.value =
-          _transcriptionState.value.copy(isLoading = false, translation = translateResult)
+        _transcription.value = _transcription.value.copy(translationText = translateResult)
+        _isLoading.value = false
 
-        Log.d(TAG, "Summary: " + transcriptionState.value.translation)
+        Log.d(TAG, "Summary: " + transcription.value.translationText)
       } catch (e: Exception) {
         Log.e(TAG, "Error Translating text", e)
       }
@@ -132,15 +154,17 @@ class TranscriptionViewModel(settingsRepository: SettingsRepository, val dao: Tr
   }
 
   fun onSaveClick() {
-    val datascription =
-      Transcription(
-        transcriptionText = transcriptionState.value.transcription.orEmpty(),
-        summaryText = transcriptionState.value.summary,
-        translationText = transcriptionState.value.translation,
-        timestamp = transcriptionState.value.timestamp,
-      )
-
-    viewModelScope.launch { dao.insert(datascription) }
+    viewModelScope.launch {
+      transcriptionRepository.upsertTranscription(_transcription.value)
+      _transcription.value =
+        _transcription.value.copy(
+          transcriptionText = "",
+          summaryText = null,
+          translationText = null,
+          timestamp = null,
+        )
+      hideBottomSheet()
+    }
   }
 
   fun copyToClipboard(context: Context, text: String) {

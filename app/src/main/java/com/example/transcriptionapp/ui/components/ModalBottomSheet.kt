@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.transcriptionapp.viewmodel.TranscriptionState
 import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,8 +36,9 @@ fun BottomSheet(
   finishAfter: Boolean? = false,
 ) {
   val showBottomSheet by viewModel.isBottomSheetVisible.collectAsState()
-  val (isLoading, transcription, summary, translation, timestamp, _) =
-    viewModel.transcriptionState.collectAsState(initial = TranscriptionState()).value
+  val transcription = viewModel.transcription.collectAsState().value
+  val isLoading by viewModel.isLoading.collectAsState()
+
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val context = LocalContext.current
 
@@ -70,9 +70,7 @@ fun BottomSheet(
             }
           } else {
             Column(modifier = Modifier.weight(1f)) {
-              TranscriptionCard(transcription!!, summary, translation, timestamp!!) { text ->
-                viewModel.copyToClipboard(context, text)
-              }
+              TranscriptionCard(transcription) { text -> viewModel.copyToClipboard(context, text) }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

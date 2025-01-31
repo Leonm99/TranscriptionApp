@@ -15,153 +15,109 @@ import com.example.transcriptionapp.viewmodel.SettingsViewModel
 
 @Composable
 fun ApiKeyDialog(viewModel: SettingsViewModel) {
-    val userInput = rememberSaveable { mutableStateOf("") }
+  val userInput = rememberSaveable { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = { viewModel.hideDialog() },
-        title = { Text(text = "API Key") },
-        text = {
-            TextField(
-                value = userInput.value,
-                onValueChange = { userInput.value = it },
-                label = { Text("Enter text") },
-                maxLines = 5  // Allows up to 5 lines
-            )
-        },
-        confirmButton = if (userInput.value.isEmpty()) {
-            {
-                TextButton(
-                    onClick = { viewModel.hideDialog() },
-                ) {
-                    Text(text = "Cancel")
-                }
+  AlertDialog(
+    onDismissRequest = { viewModel.hideDialog() },
+    title = { Text(text = "API Key") },
+    text = {
+      TextField(
+        value = userInput.value,
+        onValueChange = { userInput.value = it },
+        label = { Text("Enter text") },
+        maxLines = 5, // Allows up to 5 lines
+      )
+    },
+    confirmButton =
+      if (userInput.value.isEmpty()) {
+        { TextButton(onClick = { viewModel.hideDialog() }) { Text(text = "Cancel") } }
+      } else {
+        {
+          TextButton(
+            onClick = {
+              viewModel.setUserApiKey(userInput.value)
+              viewModel.hideDialog()
             }
-        } else {
-            {
-                TextButton(
-                    onClick = {
-                        viewModel.setUserApiKey(userInput.value)
-                        viewModel.hideDialog()
-                    },
-                ) {
-                    Text(text = "Select")
-                }
-            }
-        },
-        dismissButton =
-            {
-                TextButton(
-                    onClick = { userInput.value = "" },
-                ) {
-                    Text(text = "Clear")
-                }
-
-            },
-    )
-    }
-
+          ) {
+            Text(text = "Select")
+          }
+        }
+      },
+    dismissButton = { TextButton(onClick = { userInput.value = "" }) { Text(text = "Clear") } },
+  )
+}
 
 @Composable
- fun LanguageDialog(viewModel: SettingsViewModel, selectedLanguageKey: String?) {
-   val userSelectedLanguage = rememberSaveable { mutableStateOf(selectedLanguageKey) }
-    val items = stringArrayResource(id = R.array.string_array_languages)
+fun LanguageDialog(viewModel: SettingsViewModel, selectedLanguageKey: String?) {
+  val userSelectedLanguage = rememberSaveable { mutableStateOf(selectedLanguageKey) }
+  val items = stringArrayResource(id = R.array.string_array_languages)
 
-    AlertDialog(
-        onDismissRequest = { viewModel.hideDialog() },
-        title = { Text(text = "Language") },
-        text = {
-
-                LazyColumn {
-                    items(items) { language ->
-                        LabelRadioButton(
-                            item = language,
-                            isSelected = language == userSelectedLanguage.value,
-                            onClick = {
-                                userSelectedLanguage.value = language
-                                viewModel.setSelectedLanguage(language)
-
-                            }
-                        )
-                    }
-                }
-        },
-        confirmButton = {
-                TextButton(
-                    onClick = { viewModel.hideDialog() },
-                ) {
-                    Text(text = "Back")
-                }
+  AlertDialog(
+    onDismissRequest = { viewModel.hideDialog() },
+    title = { Text(text = "Language") },
+    text = {
+      LazyColumn {
+        items(items) { language ->
+          LabelRadioButton(
+            item = language,
+            isSelected = language == userSelectedLanguage.value,
+            onClick = {
+              userSelectedLanguage.value = language
+              viewModel.setSelectedLanguage(language)
             },
-        dismissButton = {
-
-            },
-    )
+          )
+        }
+      }
+    },
+    confirmButton = { TextButton(onClick = { viewModel.hideDialog() }) { Text(text = "Back") } },
+    dismissButton = {},
+  )
 }
 
 @Composable
 fun ModelDialog(viewModel: SettingsViewModel, selectedModelKey: String) {
-   val userSelectedModel = rememberSaveable { mutableStateOf(selectedModelKey) }
-    val items = stringArrayResource(id = R.array.string_array_models)
+  val userSelectedModel = rememberSaveable { mutableStateOf(selectedModelKey) }
+  val items = stringArrayResource(id = R.array.string_array_models)
 
-    AlertDialog(
-        onDismissRequest = { viewModel.hideDialog() },
-        title = { Text(text = "Models") },
-        text = {
-
-            LazyColumn {
-                items(items) { model ->
-                    LabelRadioButton(
-                        item = model,
-                        isSelected = model == userSelectedModel.value,
-                        onClick = {
-                            userSelectedModel.value = model
-                            viewModel.setSelectedModel(model)
-
-                        }
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { viewModel.hideDialog() },
-            ) {
-                Text(text = "Back")
-            }
-        },
-        dismissButton = {
-
-        },
-    )
+  AlertDialog(
+    onDismissRequest = { viewModel.hideDialog() },
+    title = { Text(text = "Models") },
+    text = {
+      LazyColumn {
+        items(items) { model ->
+          LabelRadioButton(
+            item = model,
+            isSelected = model == userSelectedModel.value,
+            onClick = {
+              userSelectedModel.value = model
+              viewModel.setSelectedModel(model)
+            },
+          )
+        }
+      }
+    },
+    confirmButton = { TextButton(onClick = { viewModel.hideDialog() }) { Text(text = "Back") } },
+    dismissButton = {},
+  )
 }
 
 @Composable
 fun DeleteDialog(viewModel: SettingsViewModel) {
 
-    AlertDialog(
-        onDismissRequest = { viewModel.hideDialog() },
-        title = { Text(text = "Delete Transcriptions") },
-        text = {
-            Text(text = "TEST")
-        },
-        confirmButton =
-            {
-                TextButton(
-                    onClick = { viewModel.hideDialog() },
-                ) {
-                    Text(text = "Cancel")
-                }
-
-        },
-        dismissButton =
-            {
-                TextButton(
-                    onClick = { viewModel.hideDialog()  },
-                ) {
-                    Text(text = "Clear")
-                }
-
-            },
-    )
+  AlertDialog(
+    onDismissRequest = { viewModel.hideDialog() },
+    title = { Text(text = "Delete Transcription Database") },
+    text = { Text(text = "This will delete ALL transcriptions from the database.") },
+    confirmButton = {
+      TextButton(
+        onClick = {
+          viewModel.deleteDatabase()
+          viewModel.hideDialog()
+        }
+      ) {
+        Text(text = "DELETE")
+      }
+    },
+    dismissButton = { TextButton(onClick = { viewModel.hideDialog() }) { Text(text = "Cancel") } },
+  )
 }
-
