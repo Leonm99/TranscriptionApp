@@ -92,7 +92,7 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
 
               Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp!!,
+                text = transcription.timestamp,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
               )
@@ -113,7 +113,7 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
 
               Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp!!,
+                text = transcription.timestamp,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
               )
@@ -138,7 +138,7 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
 
               Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp!!,
+                text = transcription.timestamp,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
               )

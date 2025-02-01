@@ -13,9 +13,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.api.OpenAiHandler
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.util.FileUtils
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +25,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
 fun formatTimestamp(timestamp: Long): String {
   val date = Date(timestamp)
@@ -34,12 +35,13 @@ fun formatTimestamp(timestamp: Long): String {
 
 private const val TAG = "TranscriptionViewModel"
 
-class TranscriptionViewModel(
-  settingsRepository: SettingsRepository,
-  transcriptionDao: TranscriptionDao,
+@HiltViewModel
+class BottomSheetViewModel
+@Inject
+constructor(
+  private val settingsRepository: SettingsRepository,
+  private val transcriptionRepository: TranscriptionRepository,
 ) : ViewModel() {
-
-  private val transcriptionRepository = TranscriptionRepository(transcriptionDao)
 
   val openAiHandler = OpenAiHandler(settingsRepository)
 
@@ -53,7 +55,7 @@ class TranscriptionViewModel(
         transcriptionText = "",
         summaryText = null,
         translationText = null,
-        timestamp = null,
+        timestamp = "null",
       )
     )
   val transcription: StateFlow<Transcription> = _transcription.asStateFlow()
@@ -161,7 +163,7 @@ class TranscriptionViewModel(
           transcriptionText = "",
           summaryText = null,
           translationText = null,
-          timestamp = null,
+          timestamp = "null",
         )
       hideBottomSheet()
     }

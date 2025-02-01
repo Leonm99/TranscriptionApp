@@ -4,6 +4,8 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.jetbrains.kotlin.serialization)
   alias(libs.plugins.ksp)
+  alias(libs.plugins.dagger.hilt.android)
+  alias(libs.plugins.room)
 }
 
 android {
@@ -34,6 +36,8 @@ android {
   }
   kotlinOptions { jvmTarget = "11" }
   buildFeatures { compose = true }
+
+  room { schemaDirectory("$projectDir/schemas") }
 }
 
 dependencies {
@@ -67,6 +71,9 @@ dependencies {
 
   implementation(libs.androidx.room.ktx)
   ksp(libs.androidx.room.compiler)
+
+  implementation(libs.hilt.android)
+  ksp(libs.hilt.compiler)
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)

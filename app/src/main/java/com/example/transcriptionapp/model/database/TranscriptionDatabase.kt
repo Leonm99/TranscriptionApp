@@ -17,7 +17,7 @@ data class Transcription(
   @ColumnInfo(name = "transcription_text") val transcriptionText: String,
   @ColumnInfo(name = "summary_text") val summaryText: String?,
   @ColumnInfo(name = "translation_text") val translationText: String?,
-  @ColumnInfo(name = "timestamp") val timestamp: String?,
+  @ColumnInfo(name = "timestamp") val timestamp: String,
 )
 
 @Dao

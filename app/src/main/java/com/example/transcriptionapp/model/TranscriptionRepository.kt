@@ -3,8 +3,9 @@ package com.example.transcriptionapp.com.example.transcriptionapp.model
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-class TranscriptionRepository(private val transcriptionDao: TranscriptionDao) {
+class TranscriptionRepository @Inject constructor(private val transcriptionDao: TranscriptionDao) {
   val allTranscriptions: Flow<List<Transcription>> =
     transcriptionDao.getAllTranscriptionsSortedByIdDesc()
 

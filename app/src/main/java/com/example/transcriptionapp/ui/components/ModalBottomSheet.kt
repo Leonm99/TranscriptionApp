@@ -26,12 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
+import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheet(
-  viewModel: TranscriptionViewModel,
+  viewModel: BottomSheetViewModel,
   activity: ComponentActivity? = null,
   finishAfter: Boolean? = false,
 ) {

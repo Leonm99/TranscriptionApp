@@ -1,7 +1,6 @@
 package com.example.transcriptionapp
 
 import android.content.Intent
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -10,27 +9,26 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.core.graphics.drawable.toDrawable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.transcriptionapp.TranscriptionApp.DatabaseProvider
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
-import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.ui.screens.ShareScreen
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
 import com.example.transcriptionapp.util.matchUrlFromSharedText
-import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
+import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.Serializable
 import com.example.transcriptionapp.util.FileUtils.saveFileToCache as saveToCache
 
 private const val TAG = "ShareActivity"
 
+@AndroidEntryPoint
 class ShareActivity : ComponentActivity() {
   private var sharedUrlCached: String = ""
 
-  private lateinit var settingsRepository: SettingsRepository
-  private lateinit var transcriptionViewModel: TranscriptionViewModel
-  private val dao: TranscriptionDao = DatabaseProvider.getDatabase(application).transcriptionDao()
+  val bottomSheetViewModel: BottomSheetViewModel by viewModels<BottomSheetViewModel>()
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
@@ -42,11 +40,8 @@ class ShareActivity : ComponentActivity() {
 
     enableEdgeToEdge()
 
-    settingsRepository = SettingsRepository((application as TranscriptionApp).dataStore)
-    transcriptionViewModel = TranscriptionViewModel(settingsRepository, dao)
-
     window.run {
-      setBackgroundDrawable(ColorDrawable(0))
+      setBackgroundDrawable(0.toDrawable())
       setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
       setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
     }
@@ -55,7 +50,7 @@ class ShareActivity : ComponentActivity() {
       TranscriptionAppTheme {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ShareScreen) {
-          composable<ShareScreen> { ShareScreen(transcriptionViewModel, this@ShareActivity) }
+          composable<ShareScreen> { ShareScreen(bottomSheetViewModel, this@ShareActivity) }
         }
       }
     }
@@ -73,7 +68,7 @@ class ShareActivity : ComponentActivity() {
           audioFile?.let { file ->
             Log.d("ReceiveIntentActivity", "Audio file path: ${file.absolutePath}")
             // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
-            transcriptionViewModel.onAudioSelected(Uri.fromFile(file), this)
+            bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
           }
         }
         intent.type?.startsWith("text/") == true -> {

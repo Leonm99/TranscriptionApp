@@ -8,7 +8,9 @@ import androidx.room.Room
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDatabase
 import com.example.transcriptionapp.model.UserPreferences
 import com.example.transcriptionapp.model.UserPreferencesSerializer
+import dagger.hilt.android.HiltAndroidApp
 
+@HiltAndroidApp
 class TranscriptionApp : Application() {
   companion object {
     private const val USER_PREFERENCES_NAME = "user-preferences"

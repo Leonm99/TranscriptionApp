@@ -31,11 +31,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.ui.components.TranscriptionCard
-import com.example.transcriptionapp.viewmodel.TranscriptionViewModel
+import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: TranscriptionViewModel) {
+fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewModel) {
 
   val transcriptionListState = viewModel.transcriptionList.collectAsState()
   val transcriptionList = transcriptionListState.value

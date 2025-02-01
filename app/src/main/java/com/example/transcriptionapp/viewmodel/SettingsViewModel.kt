@@ -3,9 +3,9 @@ package com.example.transcriptionapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.UserPreferences
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
 
@@ -23,10 +24,13 @@ enum class DialogType {
   DELETE,
 }
 
-class SettingsViewModel(private val settingsRepository: SettingsRepository, dao: TranscriptionDao) :
-  ViewModel() {
-
-  private val transcriptionRepository = TranscriptionRepository(dao)
+@HiltViewModel
+class SettingsViewModel
+@Inject
+constructor(
+  private val settingsRepository: SettingsRepository,
+  private val transcriptionRepository: TranscriptionRepository,
+) : ViewModel() {
 
   val settings: StateFlow<UserPreferences> =
     settingsRepository.userPreferencesFlow.stateIn(
