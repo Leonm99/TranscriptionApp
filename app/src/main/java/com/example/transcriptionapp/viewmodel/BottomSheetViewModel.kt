@@ -10,18 +10,17 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.OpenAiHandler
+import com.example.transcriptionapp.api.MockOpenAiHandler
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.util.FileUtils
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,7 +40,7 @@ class TranscriptionViewModel(
 
   private val transcriptionRepository = TranscriptionRepository(transcriptionDao)
 
-  val openAiHandler = OpenAiHandler(settingsRepository)
+  val openAiHandler = MockOpenAiHandler(settingsRepository)
 
   private val _isLoading = MutableStateFlow(false)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -64,15 +63,16 @@ class TranscriptionViewModel(
   private val _transcriptionList = MutableStateFlow<List<Transcription>>(emptyList())
   val transcriptionList: StateFlow<List<Transcription>> = _transcriptionList.asStateFlow()
 
-  fun hideBottomSheet() {
-    _isBottomSheetVisible.value = false
-  }
-
   init {
     viewModelScope.launch {
-      _isLoading.value = true
-      transcriptionRepository.allTranscriptions.collect { transcriptions ->
-        _transcriptionList.value = transcriptions
+      try {
+        _isLoading.value = true
+        transcriptionRepository.allTranscriptions.collectLatest { transcriptions ->
+          _transcriptionList.value = transcriptions
+        }
+        _isLoading.value = false
+      } catch (e: Exception) {
+        Log.e(TAG, "Error fetching transcriptions", e)
         _isLoading.value = false
       }
     }
@@ -80,28 +80,21 @@ class TranscriptionViewModel(
 
   fun onAudioSelected(audioUri: Uri, context: Context) {
     viewModelScope.launch {
-      withContext(Dispatchers.Main) {
-        _isBottomSheetVisible.value = true
-        _isLoading.value = true
-      }
+      _isBottomSheetVisible.value = true
+      _isLoading.value = true
 
       try {
-        val audioFile = withContext(Dispatchers.IO) { FileUtils.getFileFromUri(audioUri, context) }
-        withContext(Dispatchers.IO) {
-          Log.d(TAG, "Transcribing audio...")
-
-          _transcription.value =
-            _transcription.value.copy(
-              transcriptionText = openAiHandler.whisper(audioFile!!),
-              timestamp = formatTimestamp(System.currentTimeMillis()),
-            )
-          _isLoading.value = false
-        }
+        val audioFile = FileUtils.getFileFromUri(audioUri, context)
+        val transcriptionText = openAiHandler.whisper(audioFile!!)
+        _transcription.value =
+          _transcription.value.copy(
+            transcriptionText = transcriptionText,
+            timestamp = formatTimestamp(System.currentTimeMillis()),
+          )
       } catch (e: Exception) {
-        // Handle error, e.g., update UI with error message
         Log.e(TAG, "Error transcribing audio", e)
+      } finally {
         _isLoading.value = false
-        // ...
       }
     }
   }
@@ -119,17 +112,12 @@ class TranscriptionViewModel(
     viewModelScope.launch {
       _isLoading.value = true
       try {
-        val summaryResult =
-          withContext(Dispatchers.IO) {
-            openAiHandler.summarize(transcription.value.transcriptionText)
-          }
-
-        _transcription.value = _transcription.value.copy(summaryText = summaryResult)
-        _isLoading.value = false
-
-        Log.d(TAG, "Summary: " + transcription.value.summaryText)
+        val summaryText = openAiHandler.summarize(_transcription.value.transcriptionText)
+        _transcription.value = _transcription.value.copy(summaryText = summaryText)
       } catch (e: Exception) {
         Log.e(TAG, "Error summarizing text", e)
+      } finally {
+        _isLoading.value = false
       }
     }
   }
@@ -138,17 +126,12 @@ class TranscriptionViewModel(
     viewModelScope.launch {
       _isLoading.value = true
       try {
-        val translateResult =
-          withContext(Dispatchers.IO) {
-            openAiHandler.translate(transcription.value.transcriptionText)
-          }
-
-        _transcription.value = _transcription.value.copy(translationText = translateResult)
-        _isLoading.value = false
-
-        Log.d(TAG, "Summary: " + transcription.value.translationText)
+        val translationText = openAiHandler.translate(_transcription.value.transcriptionText)
+        _transcription.value = _transcription.value.copy(translationText = translationText)
       } catch (e: Exception) {
-        Log.e(TAG, "Error Translating text", e)
+        Log.e(TAG, "Error translating text", e)
+      } finally {
+        _isLoading.value = false
       }
     }
   }
@@ -172,5 +155,9 @@ class TranscriptionViewModel(
     val clip = ClipData.newPlainText("Transcription", text)
     clipboardManager.setPrimaryClip(clip)
     Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+  }
+
+  internal fun hideBottomSheet() {
+    _isBottomSheetVisible.value = false
   }
 }

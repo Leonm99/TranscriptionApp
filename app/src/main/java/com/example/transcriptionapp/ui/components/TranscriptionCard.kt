@@ -84,96 +84,48 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
               .padding(vertical = 10.dp, horizontal = 10.dp)
               .animateContentSize(animationSpec = tween(durationMillis = 175, easing = EaseInOut)),
         ) { page ->
-          val scrollState = rememberScrollState()
-
-          Column(modifier = Modifier.fillMaxWidth()) {
-            if (page == 0) {
-              Text(text = "Transcription", style = MaterialTheme.typography.titleMedium)
-
-              Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp!!,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
+          when (page) {
+            0 ->
+              TranscriptionContent(
+                transcription.transcriptionText,
+                transcription.timestamp!!,
+                "Transcription",
               )
-
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.transcriptionText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
-              Text(text = "Summary", style = MaterialTheme.typography.titleMedium)
-
-              Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp!!,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
-              )
-
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.summaryText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            } else if (
-              page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
-                !transcription.translationText.isNullOrEmpty()
-            ) {
-
-              Text(text = "Translation", style = MaterialTheme.typography.titleMedium)
-
-              Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp!!,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
-              )
-              val scrollState = rememberScrollState()
-
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.translationText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            }
+            1 ->
+              if (!transcription.summaryText.isNullOrEmpty())
+                TranscriptionContent(
+                  transcription.summaryText,
+                  transcription.timestamp!!,
+                  "Summary",
+                )
+              else Box {}
+            2 ->
+              if (!transcription.translationText.isNullOrEmpty())
+                TranscriptionContent(
+                  transcription.translationText,
+                  transcription.timestamp!!,
+                  "Translation",
+                )
+              else Box {}
           }
         }
 
         IconButton(
           onClick = {
             onCopyClicked(
-              if (pagerState.currentPage == 0) transcription.transcriptionText
-              else if (pagerState.currentPage == 1 && transcription.summaryText != null)
-                transcription.summaryText
-              else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
+              when (pagerState.currentPage) {
+                0 -> transcription.transcriptionText
+                1 -> transcription.summaryText ?: "No summary text"
+                2 -> transcription.translationText ?: "No translation text"
+                else -> ""
+              }
             )
           },
-          modifier = Modifier.align(Alignment.TopEnd),
+          modifier = Modifier.align(Alignment.TopStart).padding(end = 8.dp, top = 8.dp),
         ) {
           Icon(
             Icons.Filled.ContentCopy,
-            contentDescription = "Copy",
-            modifier = Modifier.size(20.dp),
+            contentDescription = "stringResource(id = R.string.copy_content)",
           )
         }
       }
@@ -188,5 +140,36 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
         }
       }
     }
+  }
+}
+
+@Composable
+fun TranscriptionContent(text: String, timestamp: String, title: String) {
+  val scrollState = rememberScrollState()
+  Column(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+    verticalArrangement = Arrangement.Center,
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
+    Text(text = title, style = MaterialTheme.typography.titleMedium)
+
+    Text(
+      modifier = Modifier.padding(bottom = 8.dp),
+      text = timestamp,
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.outline,
+    )
+
+    Text(
+      modifier =
+        Modifier.fillMaxWidth()
+          .wrapContentHeight()
+          .nestedScroll(rememberNestedScrollInteropConnection())
+          .verticalScroll(scrollState)
+          .verticalScrollbar(scrollState = scrollState),
+      text = text,
+      textAlign = TextAlign.Start,
+      style = MaterialTheme.typography.bodyMedium,
+    )
   }
 }
