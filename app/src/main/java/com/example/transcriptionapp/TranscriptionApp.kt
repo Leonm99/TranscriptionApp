@@ -1,4 +1,4 @@
-package com.example.transcriptionapp
+package com.example.transcriptionapp.com.example.transcriptionapp
 
 import android.app.Application
 import android.content.Context
@@ -17,7 +17,7 @@ class TranscriptionApp : Application() {
   }
 
   val dataStore: DataStore<UserPreferences> by
-    dataStore(fileName = USER_PREFERENCES_NAME, serializer = UserPreferencesSerializer)
+  dataStore(fileName = USER_PREFERENCES_NAME, serializer = UserPreferencesSerializer)
 
   object DatabaseProvider {
     private var database: TranscriptionDatabase? = null

@@ -1,4 +1,4 @@
-package com.example.transcriptionapp.com.example.transcriptionapp
+package com.example.transcriptionapp
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -25,7 +25,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object DatabaseModule {
+object HiltModule {
 
   @Provides
   @Singleton

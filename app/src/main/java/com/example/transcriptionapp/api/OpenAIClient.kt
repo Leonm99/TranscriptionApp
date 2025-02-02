@@ -52,6 +52,7 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
 
   private fun initOpenAI(apiKey: String) {
     Log.d("OpenAiHandler", "Initializing OpenAI with API Key: $apiKey")
+
     openai = OpenAI(token = apiKey, timeout = Timeout(socket = 120.seconds))
   }
 
@@ -93,13 +94,14 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
             ChatMessage(role = ChatRole.User, content = userText),
           ),
       )
-    return openai
-      ?.chatCompletion(chatCompletionRequest)
-      ?.choices
-      ?.get(0)
-      ?.message
-      ?.content
-      .orEmpty()
+    return try {
+      val result =
+        openai?.chatCompletion(chatCompletionRequest)?.choices?.get(0)?.message?.content.orEmpty()
+      result
+    } catch (e: Exception) {
+      Log.e("OpenAiHandler", "Error during summary: ${e.message}", e)
+      e.message.toString()
+    }
   }
 
   suspend fun translate(userText: String): String {
@@ -118,13 +120,15 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
             ChatMessage(role = ChatRole.User, content = userText),
           ),
       )
-    return openai
-      ?.chatCompletion(chatCompletionRequest)
-      ?.choices
-      ?.get(0)
-      ?.message
-      ?.content
-      .orEmpty()
+    return try {
+      val result =
+        openai?.chatCompletion(chatCompletionRequest)?.choices?.get(0)?.message?.content.orEmpty()
+
+      result
+    } catch (e: Exception) {
+      Log.e("OpenAiHandler", "Error during translation: ${e.message}", e)
+      e.message.toString()
+    }
   }
 
   suspend fun correctSpelling(userText: String): String {
@@ -144,13 +148,15 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
             ChatMessage(role = ChatRole.User, content = userText),
           ),
       )
-    return openai
-      ?.chatCompletion(chatCompletionRequest)
-      ?.choices
-      ?.get(0)
-      ?.message
-      ?.content
-      .orEmpty()
+    return try {
+      val result =
+        openai?.chatCompletion(chatCompletionRequest)?.choices?.get(0)?.message?.content.orEmpty()
+
+      result
+    } catch (e: Exception) {
+      Log.e("OpenAiHandler", "Error during transcription: ${e.message}", e)
+      e.message.toString()
+    }
   }
 
   suspend fun checkApiKey(apiKey: String): Boolean {
