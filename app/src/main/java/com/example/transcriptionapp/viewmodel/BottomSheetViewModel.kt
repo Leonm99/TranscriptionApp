@@ -10,7 +10,8 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.MockOpenAiHandler
+import com.example.transcriptionapp.api.OpenAiService
+import com.example.transcriptionapp.api.OpenAiServiceFactory
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.model.SettingsRepository
@@ -41,9 +42,10 @@ class BottomSheetViewModel
 constructor(
   private val settingsRepository: SettingsRepository,
   private val transcriptionRepository: TranscriptionRepository,
+  private val openAiServiceFactory: OpenAiServiceFactory,
 ) : ViewModel() {
 
-  val openAiHandler = MockOpenAiHandler(settingsRepository)
+  private lateinit var openAiService: OpenAiService
 
   private val _isLoading = MutableStateFlow(false)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -72,6 +74,11 @@ constructor(
 
   init {
     viewModelScope.launch {
+      settingsRepository.userPreferencesFlow.collect { userPreferences ->
+        openAiService = openAiServiceFactory.create(userPreferences)
+      }
+    }
+    viewModelScope.launch {
       _isLoading.value = true
       transcriptionRepository.allTranscriptions.collect { transcriptions ->
         _transcriptionList.value = transcriptions
@@ -94,7 +101,7 @@ constructor(
 
           _transcription.value =
             _transcription.value.copy(
-              transcriptionText = openAiHandler.whisper(audioFile!!),
+              transcriptionText = openAiService.whisper(audioFile!!),
               timestamp = formatTimestamp(System.currentTimeMillis()),
             )
           _isLoading.value = false
@@ -123,7 +130,7 @@ constructor(
       try {
         val summaryResult =
           withContext(Dispatchers.IO) {
-            openAiHandler.summarize(transcription.value.transcriptionText)
+            openAiService.summarize(transcription.value.transcriptionText)
           }
 
         _transcription.value = _transcription.value.copy(summaryText = summaryResult)
@@ -142,7 +149,7 @@ constructor(
       try {
         val translateResult =
           withContext(Dispatchers.IO) {
-            openAiHandler.translate(transcription.value.transcriptionText)
+            openAiService.translate(transcription.value.transcriptionText)
           }
 
         _transcription.value = _transcription.value.copy(translationText = translateResult)

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.ui.components.TranscriptionCard
@@ -125,23 +127,35 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         )
       }
     }
-    LazyColumn(modifier = Modifier.padding(3.dp)) {
-      items(transcriptionList) { transcription ->
-        val isSelected = selectedItems.contains(transcription.id)
-        TranscriptionCard(
-          transcription = transcription,
-          onCopyClicked = { viewModel.copyToClipboard(activity, it) },
-          isSelected = isSelected,
-          isSelectionMode = isSelectionMode.value,
-          onSelected = {
-            if (isSelected) {
-              selectedItems.remove(transcription.id)
-            } else {
-              selectedItems.add(transcription.id)
-              isSelectionMode.value = true
-            }
-          },
+    if (transcriptionList.isEmpty()) {
+      Box(modifier = Modifier.fillMaxSize()) {
+        Text(
+          modifier = Modifier.align(Alignment.Center).fillMaxWidth().padding(16.dp),
+          style = MaterialTheme.typography.headlineLarge,
+          color = MaterialTheme.colorScheme.outline,
+          text = "No transcriptions found in the database. 😕",
+          textAlign = TextAlign.Center,
         )
+      }
+    } else {
+      LazyColumn(modifier = Modifier.padding(3.dp)) {
+        items(transcriptionList) { transcription ->
+          val isSelected = selectedItems.contains(transcription.id)
+          TranscriptionCard(
+            transcription = transcription,
+            onCopyClicked = { viewModel.copyToClipboard(activity, it) },
+            isSelected = isSelected,
+            isSelectionMode = isSelectionMode.value,
+            onSelected = {
+              if (isSelected) {
+                selectedItems.remove(transcription.id)
+              } else {
+                selectedItems.add(transcription.id)
+                isSelectionMode.value = true
+              }
+            },
+          )
+        }
       }
     }
   }

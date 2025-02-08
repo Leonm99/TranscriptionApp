@@ -34,4 +34,8 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Us
       currentSettings.copy(formatSwitchState = switchState)
     }
   }
+
+  suspend fun setMockApi(mockApi: Boolean) {
+    dataStore.updateData { currentSettings -> currentSettings.copy(mockApi = mockApi) }
+  }
 }

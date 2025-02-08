@@ -24,7 +24,16 @@ import java.io.File
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
-class OpenAiHandler @Inject constructor(private val settingsRepository: SettingsRepository) {
+interface OpenAiService {
+  suspend fun whisper(audioFile: File): String
+
+  suspend fun summarize(text: String): String
+
+  suspend fun translate(text: String): String
+}
+
+class OpenAiHandler @Inject constructor(private val settingsRepository: SettingsRepository) :
+  OpenAiService {
 
   private var openai: OpenAI? = null
   private val client = OkHttpClient()
@@ -33,6 +42,7 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
   private var language: String = "English"
   private var model: String = "gpt-o4-mini"
   private var isFormattingEnabled: Boolean = false
+  private var mockApi: Boolean = false
 
   private val MAX_RETRIES = 3
   private val RETRY_DELAY_MS = 1000L
@@ -45,6 +55,7 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
         language = userPreferences.selectedLanguage
         model = userPreferences.selectedModel
         isFormattingEnabled = userPreferences.formatSwitchState
+        mockApi = userPreferences.mockApi
         initOpenAI(apiKey)
       }
     }
@@ -56,7 +67,7 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
     openai = OpenAI(token = apiKey, timeout = Timeout(socket = 120.seconds))
   }
 
-  suspend fun whisper(file: File): String {
+  override suspend fun whisper(file: File): String {
     println("Create transcription...")
     val path = Path(file.absolutePath)
     val transcriptionRequest =
@@ -79,7 +90,7 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
     }
   }
 
-  suspend fun summarize(userText: String): String {
+  override suspend fun summarize(userText: String): String {
     val language = language.uppercase()
     val chatCompletionRequest =
       ChatCompletionRequest(
@@ -104,7 +115,7 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
     }
   }
 
-  suspend fun translate(userText: String): String {
+  override suspend fun translate(userText: String): String {
 
     val language = language.uppercase()
     val chatCompletionRequest =

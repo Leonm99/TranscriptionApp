@@ -16,6 +16,7 @@ data class UserPreferences(
   val selectedLanguage: String = "English",
   val selectedModel: String = "gpt-4o-mini",
   val formatSwitchState: Boolean = false,
+  val mockApi: Boolean = false,
 )
 
 object UserPreferencesSerializer : Serializer<UserPreferences> {

@@ -5,6 +5,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.room.Room
+import com.example.transcriptionapp.api.MockOpenAiHandler
+import com.example.transcriptionapp.api.OpenAiHandler
+import com.example.transcriptionapp.api.OpenAiServiceFactory
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDatabase
@@ -78,6 +81,30 @@ object HiltModule {
   @Singleton
   fun provideUserPreferencesSerializer(): UserPreferencesSerializer {
     return UserPreferencesSerializer
+  }
+
+  @Provides
+  @Singleton
+  fun provideOpenAiHandler(settingsRepository: SettingsRepository): OpenAiHandler {
+    return OpenAiHandler(settingsRepository)
+  }
+
+  @Provides
+  @Singleton
+  fun provideMockOpenAiHandler(): MockOpenAiHandler {
+    return MockOpenAiHandler()
+  }
+
+  @Provides
+  @Singleton
+  fun provideOpenAiServiceFactory(
+    openAiHandler: OpenAiHandler,
+    mockOpenAiHandler: MockOpenAiHandler,
+  ): OpenAiServiceFactory {
+    return OpenAiServiceFactory(
+      openAiHandler = openAiHandler,
+      mockOpenAiHandler = mockOpenAiHandler,
+    )
   }
 
   @Provides @IODispatcher fun provideIODispatcher(): CoroutineDispatcher = Dispatchers.IO
