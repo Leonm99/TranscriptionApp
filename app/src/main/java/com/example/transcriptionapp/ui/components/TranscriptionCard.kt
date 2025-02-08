@@ -3,7 +3,9 @@ package com.example.transcriptionapp.ui.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,12 +55,22 @@ fun TranscriptionCardPreview() {
         "Summary text",
         "Translation text",
         formatTimestamp(System.currentTimeMillis()),
-      )
-  ) {}
+      ),
+    onCopyClicked = {},
+    isSelected = false,
+    onSelected = {},
+  )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> Unit) {
+fun TranscriptionCard(
+  transcription: Transcription,
+  onCopyClicked: (String) -> Unit,
+  isSelected: Boolean = false,
+  isSelectionMode: Boolean = false,
+  onSelected: () -> Unit,
+) {
   val pageCount =
     1 +
       (if (transcription.summaryText != null) 1 else 0) +
@@ -66,7 +79,11 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
 
   Card(
     modifier =
-      Modifier.fillMaxWidth().wrapContentHeight().padding(5.dp).heightIn(max = 500.dp, min = 50.dp),
+      Modifier.fillMaxWidth()
+        .wrapContentHeight()
+        .padding(5.dp)
+        .heightIn(max = 500.dp, min = 50.dp)
+        .combinedClickable(onClick = {}, onLongClick = { onSelected() }),
     shape = RoundedCornerShape(12.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
@@ -159,22 +176,30 @@ fun TranscriptionCard(transcription: Transcription, onCopyClicked: (String) -> U
           }
         }
 
-        IconButton(
-          onClick = {
-            onCopyClicked(
-              if (pagerState.currentPage == 0) transcription.transcriptionText
-              else if (pagerState.currentPage == 1 && transcription.summaryText != null)
-                transcription.summaryText
-              else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
-            )
-          },
-          modifier = Modifier.align(Alignment.TopEnd),
-        ) {
-          Icon(
-            Icons.Filled.ContentCopy,
-            contentDescription = "Copy",
-            modifier = Modifier.size(20.dp),
+        if (isSelectionMode) {
+          Checkbox(
+            checked = isSelected,
+            onCheckedChange = { onSelected() },
+            modifier = Modifier.align(Alignment.TopEnd),
           )
+        } else {
+          IconButton(
+            onClick = {
+              onCopyClicked(
+                if (pagerState.currentPage == 0) transcription.transcriptionText
+                else if (pagerState.currentPage == 1 && transcription.summaryText != null)
+                  transcription.summaryText
+                else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
+              )
+            },
+            modifier = Modifier.align(Alignment.TopEnd),
+          ) {
+            Icon(
+              Icons.Filled.ContentCopy,
+              contentDescription = "Copy",
+              modifier = Modifier.size(20.dp),
+            )
+          }
         }
       }
 

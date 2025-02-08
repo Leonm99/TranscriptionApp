@@ -70,7 +70,13 @@ fun BottomSheet(
             }
           } else {
             Column(modifier = Modifier.weight(1f)) {
-              TranscriptionCard(transcription) { text -> viewModel.copyToClipboard(context, text) }
+              TranscriptionCard(
+                transcription,
+                { text -> viewModel.copyToClipboard(context, text) },
+                false,
+                false,
+                {},
+              )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

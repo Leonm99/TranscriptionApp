@@ -20,4 +20,8 @@ class TranscriptionRepository @Inject constructor(private val transcriptionDao: 
   suspend fun deleteAllTranscriptions() {
     transcriptionDao.deleteAll()
   }
+
+  suspend fun deleteTranscriptionById(transcriptionId: Int) {
+    transcriptionDao.deleteTranscriptionById(transcriptionId)
+  }
 }

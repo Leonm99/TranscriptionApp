@@ -35,6 +35,9 @@ interface TranscriptionDao {
   fun getAllTranscriptionsSortedByIdDesc(): Flow<List<Transcription>>
 
   @Query("DELETE FROM transcriptions") suspend fun deleteAll()
+
+  @Query("DELETE FROM transcriptions WHERE id = :transcriptionId")
+  suspend fun deleteTranscriptionById(transcriptionId: Int)
 }
 
 @Database(entities = [Transcription::class], version = 1)

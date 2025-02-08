@@ -10,7 +10,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.OpenAiHandler
+import com.example.transcriptionapp.api.MockOpenAiHandler
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.model.SettingsRepository
@@ -43,7 +43,7 @@ constructor(
   private val transcriptionRepository: TranscriptionRepository,
 ) : ViewModel() {
 
-  val openAiHandler = OpenAiHandler(settingsRepository)
+  val openAiHandler = MockOpenAiHandler(settingsRepository)
 
   private val _isLoading = MutableStateFlow(false)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -174,5 +174,27 @@ constructor(
     val clip = ClipData.newPlainText("Transcription", text)
     clipboardManager.setPrimaryClip(clip)
     Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+  }
+
+  fun onDeleteSelectedClick(selectedItems: List<Int>) {
+    viewModelScope.launch {
+      withContext(Dispatchers.IO) {
+        selectedItems.forEach { id -> transcriptionRepository.deleteTranscriptionById(id) }
+      }
+    }
+  }
+
+  fun onSampleClick() {
+    viewModelScope.launch {
+      transcriptionRepository.upsertTranscription(
+        Transcription(
+          0,
+          "Sample".repeat(50),
+          "Sample".repeat(50),
+          "Sample".repeat(50),
+          timestamp = System.currentTimeMillis().toString(),
+        )
+      )
+    }
   }
 }
