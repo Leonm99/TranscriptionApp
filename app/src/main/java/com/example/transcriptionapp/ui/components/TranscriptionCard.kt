@@ -83,7 +83,10 @@ fun TranscriptionCard(
         .wrapContentHeight()
         .padding(5.dp)
         .heightIn(max = 500.dp, min = 50.dp)
-        .combinedClickable(onClick = {}, onLongClick = { onSelected() }),
+        .combinedClickable(
+          onClick = { if (isSelectionMode) onSelected() },
+          onLongClick = { onSelected() },
+        ),
     shape = RoundedCornerShape(12.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {

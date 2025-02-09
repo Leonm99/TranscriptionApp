@@ -204,4 +204,8 @@ constructor(
       )
     }
   }
+
+  fun showToast(context: Context, text: String, long: Boolean = false) {
+    Toast.makeText(context, text, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
+  }
 }

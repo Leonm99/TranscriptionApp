@@ -14,7 +14,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.transcriptionapp.ui.screens.ShareScreen
+import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
 import com.example.transcriptionapp.util.matchUrlFromSharedText
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
@@ -42,7 +42,7 @@ class ShareActivity : ComponentActivity() {
 
     window.run {
       setBackgroundDrawable(0.toDrawable())
-      setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+      setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
       setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
     }
 
@@ -50,7 +50,7 @@ class ShareActivity : ComponentActivity() {
       TranscriptionAppTheme {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ShareScreen) {
-          composable<ShareScreen> { ShareScreen(bottomSheetViewModel, this@ShareActivity) }
+          composable<ShareScreen> { BottomSheet(bottomSheetViewModel, this@ShareActivity, true) }
         }
       }
     }

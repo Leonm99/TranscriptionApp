@@ -1,20 +1,27 @@
 package com.example.transcriptionapp.ui.components
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -28,7 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun BottomSheet(
   viewModel: BottomSheetViewModel,
@@ -43,58 +50,72 @@ fun BottomSheet(
   val context = LocalContext.current
 
   val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-  val halfScreenHeight = screenHeight / 2
-  Box(modifier = Modifier.fillMaxSize()) {
-    if (showBottomSheet) {
-      ModalBottomSheet(
-        modifier = Modifier.padding(top = halfScreenHeight),
-        sheetState = sheetState,
-        onDismissRequest = {
-          viewModel.hideBottomSheet()
-          if (activity != null && finishAfter == true) {
-            activity.finish()
-          }
-        },
-      ) {
-        Column(
-          modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 5.dp),
-          horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-          if (isLoading) {
-            Box(
-              modifier = Modifier.fillMaxWidth().fillMaxHeight(),
-              contentAlignment = Alignment.Center,
-            ) {
-              CircularProgressIndicator(modifier = Modifier.size(100.dp))
-              Text(modifier = Modifier.offset(y = (70).dp), text = "Loading...")
-            }
-          } else {
-            Column(modifier = Modifier.weight(1f)) {
-              TranscriptionCard(
-                transcription,
-                { text -> viewModel.copyToClipboard(context, text) },
-                false,
-                false,
-                {},
-              )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+  if (showBottomSheet) {
+    ModalBottomSheet(
+      modifier = Modifier.padding(top = screenHeight / 3),
+      sheetState = sheetState,
+      onDismissRequest = {
+        viewModel.hideBottomSheet()
+        if (activity != null && finishAfter == true) {
+          activity.finish()
+        }
+      },
+    ) {
+      Column(
+        modifier =
+          Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = 10.dp, vertical = 5.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+      ) {
+        if (isLoading) {
+          Box(
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+            contentAlignment = Alignment.Center,
+          ) {
+            CircularProgressIndicator(modifier = Modifier.size(100.dp))
+            Text(modifier = Modifier.offset(y = (70).dp), text = "Loading...")
+          }
+        } else {
+          Column(modifier = Modifier.weight(1f)) {
+            TranscriptionCard(
+              transcription,
+              { text -> viewModel.copyToClipboard(context, text) },
+              false,
+              false,
+              {},
+            )
+            HorizontalDivider(Modifier.padding(8.dp))
 
             Row(
-              modifier = Modifier.fillMaxWidth().padding(16.dp),
+              modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
               horizontalArrangement = Arrangement.SpaceEvenly,
               verticalAlignment = Alignment.CenterVertically,
             ) {
-              StickyBottomSheetButton(
+              Button(
                 onClick = { viewModel.onSummarizeClick() },
-                text = "Summarize",
-              )
-              StickyBottomSheetButton(
+                modifier = Modifier,
+                shape = CircleShape,
+              ) {
+                Icon(
+                  Icons.AutoMirrored.Filled.Message,
+                  contentDescription = "Summarize",
+                  modifier = Modifier,
+                )
+              }
+              Button(
                 onClick = { viewModel.onTranslateClick() },
-                text = "Translate",
-              )
-              StickyBottomSheetButton(onClick = { viewModel.onSaveClick() }, text = "Save")
+                modifier = Modifier,
+                shape = CircleShape,
+              ) {
+                Icon(Icons.Filled.Translate, contentDescription = "Translate", modifier = Modifier)
+              }
+              Button(
+                onClick = { viewModel.onSaveClick() },
+                modifier = Modifier,
+                shape = CircleShape,
+              ) {
+                Icon(Icons.Filled.Save, contentDescription = "Save", modifier = Modifier)
+              }
             }
           }
         }
