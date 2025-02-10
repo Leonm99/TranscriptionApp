@@ -70,6 +70,7 @@ fun TranscriptionCard(
   isSelected: Boolean = false,
   isSelectionMode: Boolean = false,
   onSelected: () -> Unit,
+  modifier: Modifier = Modifier,
 ) {
   val pageCount =
     1 +
@@ -79,7 +80,8 @@ fun TranscriptionCard(
 
   Card(
     modifier =
-      Modifier.fillMaxWidth()
+      modifier
+        .fillMaxWidth()
         .wrapContentHeight()
         .padding(5.dp)
         .heightIn(max = 500.dp, min = 50.dp)

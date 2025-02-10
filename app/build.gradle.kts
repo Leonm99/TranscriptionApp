@@ -52,7 +52,6 @@ dependencies {
   implementation(libs.androidx.material3)
   implementation(libs.materialIconsExtended)
   implementation(libs.material)
-  implementation(libs.core)
 
   implementation(libs.retrofit)
   implementation(libs.convert.gson)
