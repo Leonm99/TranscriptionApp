@@ -18,10 +18,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alorma.compose.settings.ui.SettingsMenuLink
 import com.alorma.compose.settings.ui.SettingsSwitch
 import com.example.transcriptionapp.ui.components.ApiKeyDialog
@@ -35,9 +35,9 @@ import com.example.transcriptionapp.viewmodel.SettingsViewModel
 @Composable
 fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
 
-  val showDialog by viewModel.showDialog.collectAsState()
-  val dialogType by viewModel.dialogType.collectAsState()
-  val settings by viewModel.settings.collectAsState()
+  val showDialog by viewModel.showDialog.collectAsStateWithLifecycle()
+  val dialogType by viewModel.dialogType.collectAsStateWithLifecycle()
+  val settings by viewModel.settings.collectAsStateWithLifecycle()
 
   Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
     TopAppBar(

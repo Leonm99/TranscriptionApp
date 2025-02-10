@@ -29,7 +29,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +40,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -50,9 +50,9 @@ fun BottomSheet(
   activity: ComponentActivity? = null,
   finishAfter: Boolean? = false,
 ) {
-  val showBottomSheet by viewModel.isBottomSheetVisible.collectAsState()
-  val transcription = viewModel.transcription.collectAsState().value
-  val isLoading by viewModel.isLoading.collectAsState()
+  val showBottomSheet by viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
+  val transcription = viewModel.transcription.collectAsStateWithLifecycle().value
+  val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val context = LocalContext.current
