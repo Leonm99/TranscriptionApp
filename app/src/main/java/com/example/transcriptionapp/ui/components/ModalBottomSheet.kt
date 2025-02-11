@@ -1,6 +1,5 @@
 package com.example.transcriptionapp.ui.components
 
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -61,7 +60,7 @@ fun BottomSheet(
   var transcriptionCardHeight by remember { mutableStateOf(Dp.Unspecified) }
 
   val targetTopPadding =
-    if (transcriptionCardHeight > 410.0.dp) {
+    if (transcriptionCardHeight > 460.dp) {
       screenHeight / 2 - 30.dp
     } else {
       screenHeight - 300.dp
@@ -80,6 +79,7 @@ fun BottomSheet(
       sheetState = sheetState,
       onDismissRequest = {
         viewModel.hideBottomSheet()
+        viewModel.clearTranscription()
         if (activity != null && finishAfter == true) {
           activity.finish()
         }
@@ -109,7 +109,6 @@ fun BottomSheet(
               modifier =
                 Modifier.onGloballyPositioned { layoutCoordinates ->
                   transcriptionCardHeight = layoutCoordinates.size.height.dp
-                  Log.d("BottomSheet", "TranscriptionCard Height: $transcriptionCardHeight")
                 },
             )
             HorizontalDivider(Modifier.padding(8.dp))
@@ -138,7 +137,10 @@ fun BottomSheet(
                 Icon(Icons.Filled.Translate, contentDescription = "Translate", modifier = Modifier)
               }
               Button(
-                onClick = { viewModel.onSaveClick() },
+                onClick = {
+                  viewModel.showToast(context, "Saved")
+                  viewModel.onSaveClick()
+                },
                 modifier = Modifier,
                 shape = CircleShape,
               ) {

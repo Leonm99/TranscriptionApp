@@ -56,7 +56,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
 
   val transcriptionListState = viewModel.transcriptionList.collectAsStateWithLifecycle()
   val transcriptionList = transcriptionListState.value
-  val isLoadingState = viewModel.isLoading.collectAsStateWithLifecycle()
+  val isLoadingState = viewModel.isLoading.collectAsStateWithLifecycle(true)
   val isBottomSheetVisibleState = viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
   val selectedItems = remember { mutableStateListOf<Int>() }
   val isSelectionMode = remember { mutableStateOf<Boolean>(false) }
@@ -109,7 +109,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
 
     if (isSelectionMode.value) {
       FilterChip(
-        modifier = Modifier.align(Alignment.End).padding(end = 8.dp, top = 6.dp),
+        modifier = Modifier.align(Alignment.End).padding(end = 8.dp, top = 8.dp),
         onClick = {
           isSelectAll.value = !isSelectAll.value
           if (isSelectAll.value) {
@@ -148,7 +148,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         )
       }
     } else {
-      LazyColumn(modifier = Modifier.padding(3.dp)) {
+      LazyColumn(modifier = Modifier.padding(top = 5.dp)) {
         items(transcriptionList) { transcription ->
           val isSelected = selectedItems.contains(transcription.id)
           TranscriptionCard(
@@ -164,6 +164,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
                 isSelectionMode.value = true
               }
             },
+            modifier = Modifier.padding(5.dp),
           )
         }
       }

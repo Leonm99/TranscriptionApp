@@ -47,7 +47,7 @@ constructor(
 
   private lateinit var openAiService: OpenAiService
 
-  private val _isLoading = MutableStateFlow(false)
+  private val _isLoading = MutableStateFlow(true)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
   private val _transcription =
@@ -165,13 +165,7 @@ constructor(
   fun onSaveClick() {
     viewModelScope.launch {
       transcriptionRepository.upsertTranscription(_transcription.value)
-      _transcription.value =
-        _transcription.value.copy(
-          transcriptionText = "",
-          summaryText = null,
-          translationText = null,
-          timestamp = "null",
-        )
+      clearTranscription()
       hideBottomSheet()
     }
   }
@@ -199,10 +193,20 @@ constructor(
           "Sample".repeat(50),
           "Sample".repeat(50),
           "Sample".repeat(50),
-          timestamp = System.currentTimeMillis().toString(),
+          timestamp = formatTimestamp(System.currentTimeMillis()),
         )
       )
     }
+  }
+
+  fun clearTranscription() {
+    _transcription.value =
+      _transcription.value.copy(
+        transcriptionText = "",
+        summaryText = null,
+        translationText = null,
+        timestamp = "null",
+      )
   }
 
   fun showToast(context: Context, text: String, long: Boolean = false) {

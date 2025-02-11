@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -76,14 +78,20 @@ fun TranscriptionCard(
       (if (transcription.summaryText != null) 1 else 0) +
       (if (transcription.translationText != null) 1 else 0)
   val pagerState = rememberPagerState(pageCount = { pageCount })
+  val titleText =
+    when (pagerState.currentPage) {
+      0 -> "Transcription"
+      1 -> if (!transcription.summaryText.isNullOrEmpty()) "Summary" else "Translation"
+      2 -> "Translation"
+      else -> "Transcription" // Fallback, should not happen
+    }
 
   Card(
     modifier =
       modifier
         .fillMaxWidth()
         .wrapContentHeight()
-        .padding(5.dp)
-        .heightIn(max = 500.dp, min = 50.dp)
+        .heightIn(max = 350.dp, min = 50.dp)
         .combinedClickable(
           onClick = { if (isSelectionMode) onSelected() },
           onLongClick = { onSelected() },
@@ -92,100 +100,31 @@ fun TranscriptionCard(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
   ) {
     Column(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.fillMaxWidth().padding(15.dp),
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      Box(modifier = Modifier.fillMaxWidth()) {
-        HorizontalPager(
-          state = pagerState,
-          modifier =
-            Modifier.fillMaxWidth()
-              .heightIn(min = 50.dp, max = 300.dp)
-              .padding(vertical = 10.dp, horizontal = 10.dp)
-              .animateContentSize(animationSpec = tween(durationMillis = 175, easing = EaseInOut)),
-        ) { page ->
-          val scrollState = rememberScrollState()
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
+        horizontalArrangement = Arrangement.SpaceBetween,
+      ) {
+        Column(
+          modifier = Modifier.wrapContentSize().offset(y = 6.dp),
+          horizontalAlignment = Alignment.Start,
+        ) {
+          Text(text = titleText, style = MaterialTheme.typography.titleMedium)
 
-          Column(modifier = Modifier.fillMaxWidth()) {
-            if (page == 0) {
-              Text(text = "Transcription", style = MaterialTheme.typography.titleMedium)
-
-              Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
-              )
-
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.transcriptionText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
-              Text(text = "Summary", style = MaterialTheme.typography.titleMedium)
-
-              Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
-              )
-
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.summaryText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            } else if (
-              page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
-                !transcription.translationText.isNullOrEmpty()
-            ) {
-
-              Text(text = "Translation", style = MaterialTheme.typography.titleMedium)
-
-              Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
-              )
-              val scrollState = rememberScrollState()
-
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.translationText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            }
-          }
+          Text(
+            modifier = Modifier.padding(bottom = 8.dp),
+            text = transcription.timestamp,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+          )
         }
 
         if (isSelectionMode) {
-          Checkbox(
-            checked = isSelected,
-            onCheckedChange = { onSelected() },
-            modifier = Modifier.align(Alignment.TopEnd),
-          )
+          Checkbox(checked = isSelected, onCheckedChange = { onSelected() }, modifier = Modifier)
         } else {
           IconButton(
             onClick = {
@@ -196,7 +135,7 @@ fun TranscriptionCard(
                 else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
               )
             },
-            modifier = Modifier.align(Alignment.TopEnd),
+            modifier = Modifier,
           ) {
             Icon(
               Icons.Filled.ContentCopy,
@@ -207,8 +146,66 @@ fun TranscriptionCard(
         }
       }
 
+      HorizontalPager(
+        state = pagerState,
+        modifier =
+          Modifier.fillMaxWidth()
+            .heightIn(min = 50.dp, max = 300.dp)
+            .animateContentSize(animationSpec = tween(durationMillis = 175, easing = EaseInOut)),
+      ) { page ->
+        val scrollState = rememberScrollState()
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+          if (page == 0) {
+            Text(
+              modifier =
+                Modifier.fillMaxWidth()
+                  .wrapContentHeight()
+                  .nestedScroll(rememberNestedScrollInteropConnection())
+                  .verticalScroll(scrollState)
+                  .verticalScrollbar(scrollState)
+                  .padding(top = 8.dp),
+              text = transcription.transcriptionText,
+              textAlign = TextAlign.Start,
+              style = MaterialTheme.typography.bodyMedium,
+            )
+          } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
+            Text(
+              modifier =
+                Modifier.fillMaxWidth()
+                  .wrapContentHeight()
+                  .nestedScroll(rememberNestedScrollInteropConnection())
+                  .verticalScroll(scrollState)
+                  .verticalScrollbar(scrollState)
+                  .padding(top = 8.dp),
+              text = transcription.summaryText,
+              textAlign = TextAlign.Start,
+              style = MaterialTheme.typography.bodyMedium,
+            )
+          } else if (
+            page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
+              !transcription.translationText.isNullOrEmpty()
+          ) {
+            val scrollState = rememberScrollState()
+
+            Text(
+              modifier =
+                Modifier.fillMaxWidth()
+                  .wrapContentHeight()
+                  .nestedScroll(rememberNestedScrollInteropConnection())
+                  .verticalScroll(scrollState)
+                  .verticalScrollbar(scrollState)
+                  .padding(top = 8.dp),
+              text = transcription.translationText,
+              textAlign = TextAlign.Start,
+              style = MaterialTheme.typography.bodyMedium,
+            )
+          }
+        }
+      }
+
       Row(
-        Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 8.dp),
+        Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 8.dp, top = 5.dp),
         horizontalArrangement = Arrangement.Center,
       ) {
         repeat(pagerState.pageCount) { iteration ->
