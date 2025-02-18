@@ -1,4 +1,5 @@
 [versions]
+advancedBottomsheetMaterial3 = "0.1.0"
 agp = "8.8.0"
 datastorePreferences = "1.1.1"
 hiltAndroid = "2.55"
@@ -30,6 +31,7 @@ roomKtx = "2.7.0-alpha13"
 
 [libraries]
 
+advanced-bottomsheet-material3 = { module = "io.morfly.compose:advanced-bottomsheet-material3", version.ref = "advancedBottomsheetMaterial3" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomKtx" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }

@@ -68,6 +68,9 @@ constructor(
   private val _transcriptionList = MutableStateFlow<List<Transcription>>(emptyList())
   val transcriptionList: StateFlow<List<Transcription>> = _transcriptionList.asStateFlow()
 
+  private val _expandSheet = MutableStateFlow(false)
+  val expandSheet: StateFlow<Boolean> = _expandSheet.asStateFlow()
+
   fun hideBottomSheet() {
     _isBottomSheetVisible.value = false
   }
@@ -211,5 +214,9 @@ constructor(
 
   fun showToast(context: Context, text: String, long: Boolean = false) {
     Toast.makeText(context, text, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
+  }
+
+  fun setExpandSheet(value: Boolean) {
+    _expandSheet.value = value
   }
 }

@@ -91,7 +91,7 @@ fun TranscriptionCard(
       modifier
         .fillMaxWidth()
         .wrapContentHeight()
-        .heightIn(max = 350.dp, min = 50.dp)
+        .heightIn(max = 400.dp, min = 50.dp)
         .combinedClickable(
           onClick = { if (isSelectionMode) onSelected() },
           onLongClick = { onSelected() },
@@ -101,7 +101,7 @@ fun TranscriptionCard(
   ) {
     Column(
       modifier = Modifier.fillMaxWidth().padding(15.dp),
-      verticalArrangement = Arrangement.Center,
+      verticalArrangement = Arrangement.Top,
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
       Row(
@@ -150,7 +150,7 @@ fun TranscriptionCard(
         state = pagerState,
         modifier =
           Modifier.fillMaxWidth()
-            .heightIn(min = 50.dp, max = 300.dp)
+            .heightIn(min = 50.dp, max = 350.dp)
             .animateContentSize(animationSpec = tween(durationMillis = 175, easing = EaseInOut)),
       ) { page ->
         val scrollState = rememberScrollState()
@@ -205,7 +205,7 @@ fun TranscriptionCard(
       }
 
       Row(
-        Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 8.dp, top = 5.dp),
+        Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
         horizontalArrangement = Arrangement.Center,
       ) {
         repeat(pagerState.pageCount) { iteration ->
