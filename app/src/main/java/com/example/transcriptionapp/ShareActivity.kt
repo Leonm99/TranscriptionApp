@@ -16,19 +16,19 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
+import com.example.transcriptionapp.util.FileUtils
 import com.example.transcriptionapp.util.matchUrlFromSharedText
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.serialization.Serializable
-import com.example.transcriptionapp.util.FileUtils.saveFileToCache as saveToCache
 
 private const val TAG = "ShareActivity"
 
 @AndroidEntryPoint
 class ShareActivity : ComponentActivity() {
-  private var sharedUrlCached: String = ""
 
-  val bottomSheetViewModel: BottomSheetViewModel by viewModels<BottomSheetViewModel>()
+  private var sharedUrlCached: String = ""
+  private val bottomSheetViewModel: BottomSheetViewModel by viewModels()
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
@@ -40,11 +40,12 @@ class ShareActivity : ComponentActivity() {
 
     enableEdgeToEdge()
 
-    window.run {
-      setBackgroundDrawable(0.toDrawable())
-      setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
-      setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+    // Only process the initial intent in onCreate
+    if (savedInstanceState == null) {
+      handleIntent(intent)
     }
+
+    configureWindow()
 
     setContent {
       TranscriptionAppTheme {
@@ -54,45 +55,65 @@ class ShareActivity : ComponentActivity() {
         }
       }
     }
+  }
 
-    handleIntent(intent)
+  private fun configureWindow() {
+    window.apply {
+      setBackgroundDrawable(0.toDrawable())
+      setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+      // On Android 12 and higher, TYPE_APPLICATION_OVERLAY is deprecated, and we use
+      // TYPE_APPLICATION_ATTACHED_DIALOG instead
+      setType(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+          WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG
+        } else {
+          WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        }
+      )
+    }
   }
 
   private fun handleIntent(intent: Intent?) {
     if (intent?.action == Intent.ACTION_SEND) {
       when {
         intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true -> {
-          val uri = getUriFromIntent(intent)
-
-          val audioFile = saveToCache(this, uri)
-          audioFile?.let { file ->
-            Log.d("ReceiveIntentActivity", "Audio file path: ${file.absolutePath}")
-            // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
-            bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
-          }
+          bottomSheetViewModel.showBottomSheet()
+          handleAudioOrVideoIntent(intent)
         }
-        intent.type?.startsWith("text/") == true -> {
-          val link = matchUrlFromSharedText(intent.extras?.getString(Intent.EXTRA_TEXT))
 
-          link.let {
-            Log.d("ReceiveIntentActivity", "Text link: $it")
-            sharedUrlCached = it
-            // ServiceUtil.startFloatingService(this,"DOWNLOAD", it)
-          }
+        intent.type?.startsWith("text/") == true -> {
+          bottomSheetViewModel.showBottomSheet()
+          handleTextIntent(intent)
         }
       }
     }
-    // Log.d("ReceiveIntentActivity", "FINISH")
-    // finish()
+  }
+
+  private fun handleAudioOrVideoIntent(intent: Intent) {
+    val uri = getUriFromIntent(intent)
+    val audioFile = FileUtils.saveFileToCache(this, uri)
+    audioFile?.let { file ->
+      Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
+      // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
+      bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
+    }
+  }
+
+  private fun handleTextIntent(intent: Intent) {
+    val link = matchUrlFromSharedText(intent.extras?.getString(Intent.EXTRA_TEXT))
+    link.let {
+      Log.d(TAG, "Shared text link: $it")
+      sharedUrlCached = it
+    }
   }
 
   private fun getUriFromIntent(intent: Intent): Uri {
-    return (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
     } else {
       @Suppress("DEPRECATION")
       intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
-    })!!
+    } ?: throw IllegalArgumentException("No URI found in intent")
   }
 }
 

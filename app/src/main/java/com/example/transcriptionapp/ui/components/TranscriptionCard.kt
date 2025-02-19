@@ -63,12 +63,12 @@ fun TranscriptionCardPreview() {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TranscriptionCard(
+  modifier: Modifier = Modifier,
   transcription: Transcription,
   onCopyClicked: (String) -> Unit,
   isSelected: Boolean = false,
   isSelectionMode: Boolean = false,
   onSelected: () -> Unit,
-  modifier: Modifier = Modifier,
 ) {
   val pageCount =
     1 +

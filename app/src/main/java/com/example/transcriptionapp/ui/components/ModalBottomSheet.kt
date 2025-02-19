@@ -7,14 +7,13 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -45,7 +44,11 @@ enum class SheetValue {
   Expanded,
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(
+  ExperimentalMaterial3Api::class,
+  ExperimentalFoundationApi::class,
+  ExperimentalLayoutApi::class,
+)
 @Composable
 fun BottomSheet(
   viewModel: BottomSheetViewModel,
@@ -72,8 +75,9 @@ fun BottomSheet(
       SheetValue.Hidden -> {
         Log.d("BottomSheet", "Hidden")
         viewModel.hideBottomSheet()
+        sheetState.snapTo(SheetValue.Expanded)
         viewModel.clearTranscription()
-        if (activity != null && finishAfter == true) {
+        if (activity != null && finishAfter == true && !showBottomSheet) {
           Log.d("BottomSheet", "Finish Activity")
           activity.finish()
         }
@@ -84,7 +88,7 @@ fun BottomSheet(
 
   LaunchedEffect(showBottomSheet) {
     if (showBottomSheet) {
-      sheetState.snapTo(SheetValue.Expanded)
+      sheetState.animateTo(SheetValue.Expanded)
     } else {
       sheetState.snapTo(SheetValue.Hidden)
     }
@@ -92,6 +96,7 @@ fun BottomSheet(
 
   if (showBottomSheet) {
     BottomSheetScaffold(
+      modifier = Modifier,
       scaffoldState = scaffoldState,
       sheetContent = {
         Column(
@@ -99,8 +104,8 @@ fun BottomSheet(
             Modifier.animateContentSize()
               .fillMaxWidth()
               .wrapContentHeight()
-              .padding(horizontal = 10.dp, vertical = 5.dp)
-              .windowInsetsPadding(WindowInsets.navigationBars),
+              .navigationBarsPadding()
+              .padding(horizontal = 10.dp, vertical = 5.dp),
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           if (isLoading) {
@@ -114,12 +119,12 @@ fun BottomSheet(
           } else {
             Column(modifier = Modifier) {
               TranscriptionCard(
+                modifier = Modifier,
                 transcription,
                 { text -> viewModel.copyToClipboard(context, text) },
                 false,
                 false,
                 {},
-                modifier = Modifier,
               )
               HorizontalDivider(Modifier.padding(8.dp))
 

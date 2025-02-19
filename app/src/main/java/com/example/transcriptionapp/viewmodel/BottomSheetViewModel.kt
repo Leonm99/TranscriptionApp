@@ -68,11 +68,12 @@ constructor(
   private val _transcriptionList = MutableStateFlow<List<Transcription>>(emptyList())
   val transcriptionList: StateFlow<List<Transcription>> = _transcriptionList.asStateFlow()
 
-  private val _expandSheet = MutableStateFlow(false)
-  val expandSheet: StateFlow<Boolean> = _expandSheet.asStateFlow()
-
   fun hideBottomSheet() {
     _isBottomSheetVisible.value = false
+  }
+
+  fun showBottomSheet() {
+    _isBottomSheetVisible.value = true
   }
 
   init {
@@ -82,6 +83,7 @@ constructor(
       }
     }
     viewModelScope.launch {
+      _isBottomSheetVisible.value = false
       _isLoading.value = true
       transcriptionRepository.allTranscriptions.collect { transcriptions ->
         _transcriptionList.value = transcriptions
@@ -107,7 +109,10 @@ constructor(
               transcriptionText = transcriptionResult,
               timestamp = formatTimestamp(System.currentTimeMillis()),
             )
-          _isLoading.value = false
+          withContext(Dispatchers.Main) {
+            _isLoading.value = false
+            _isBottomSheetVisible.value = true
+          }
         }
       } catch (e: Exception) {
         // Handle error, e.g., update UI with error message
