@@ -1,8 +1,5 @@
 package com.example.transcriptionapp.ui.components
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.EaseInOut
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -148,10 +145,7 @@ fun TranscriptionCard(
 
       HorizontalPager(
         state = pagerState,
-        modifier =
-          Modifier.fillMaxWidth()
-            .heightIn(min = 50.dp, max = 350.dp)
-            .animateContentSize(animationSpec = tween(durationMillis = 175, easing = EaseInOut)),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 350.dp),
       ) { page ->
         val scrollState = rememberScrollState()
 

@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -56,12 +55,11 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
 
   val transcriptionListState = viewModel.transcriptionList.collectAsStateWithLifecycle()
   val transcriptionList = transcriptionListState.value
-  val isLoadingState = viewModel.isLoading.collectAsStateWithLifecycle(true)
-  val isBottomSheetVisibleState = viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
+  viewModel.isLoading.collectAsStateWithLifecycle(true)
+  viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
   val selectedItems = remember { mutableStateListOf<Int>() }
   val isSelectionMode = remember { mutableStateOf<Boolean>(false) }
   val isSelectAll = remember { mutableStateOf<Boolean>(false) }
-
   val activity = LocalContext.current
   val launcher =
     rememberLauncherForActivityResult(
@@ -148,6 +146,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         )
       }
     } else {
+
       LazyColumn(modifier = Modifier.padding(top = 5.dp)) {
         items(transcriptionList) { transcription ->
           val isSelected = selectedItems.contains(transcription.id)
@@ -172,9 +171,6 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
   }
 
   Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars)) {
-    if (isLoadingState.value && !isBottomSheetVisibleState.value) {
-      CircularProgressIndicator(modifier = Modifier.size(50.dp).align(Alignment.Center))
-    }
     Row(Modifier.padding(vertical = 20.dp, horizontal = 30.dp).align(Alignment.BottomEnd)) {
       FloatingActionButton(
         elevation = FloatingActionButtonDefaults.elevation(),

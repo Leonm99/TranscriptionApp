@@ -85,7 +85,7 @@ constructor(
       _isLoading.value = true
       transcriptionRepository.allTranscriptions.collect { transcriptions ->
         _transcriptionList.value = transcriptions
-        _isLoading.value = false
+        // _isLoading.value = false
       }
     }
   }
@@ -101,10 +101,10 @@ constructor(
         val audioFile = withContext(Dispatchers.IO) { FileUtils.getFileFromUri(audioUri, context) }
         withContext(Dispatchers.IO) {
           Log.d(TAG, "Transcribing audio...")
-
+          val transcriptionResult = openAiService.whisper(audioFile!!)
           _transcription.value =
             _transcription.value.copy(
-              transcriptionText = openAiService.whisper(audioFile!!),
+              transcriptionText = transcriptionResult,
               timestamp = formatTimestamp(System.currentTimeMillis()),
             )
           _isLoading.value = false
@@ -214,9 +214,5 @@ constructor(
 
   fun showToast(context: Context, text: String, long: Boolean = false) {
     Toast.makeText(context, text, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
-  }
-
-  fun setExpandSheet(value: Boolean) {
-    _expandSheet.value = value
   }
 }

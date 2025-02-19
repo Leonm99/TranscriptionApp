@@ -2,16 +2,19 @@ package com.example.transcriptionapp.ui.components
 
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -71,22 +74,33 @@ fun BottomSheet(
         viewModel.hideBottomSheet()
         viewModel.clearTranscription()
         if (activity != null && finishAfter == true) {
+          Log.d("BottomSheet", "Finish Activity")
           activity.finish()
         }
       }
       SheetValue.Expanded -> {}
     }
   }
+
+  LaunchedEffect(showBottomSheet) {
+    if (showBottomSheet) {
+      sheetState.snapTo(SheetValue.Expanded)
+    } else {
+      sheetState.snapTo(SheetValue.Hidden)
+    }
+  }
+
   if (showBottomSheet) {
     BottomSheetScaffold(
       scaffoldState = scaffoldState,
       sheetContent = {
         Column(
           modifier =
-            Modifier.fillMaxWidth()
+            Modifier.animateContentSize()
+              .fillMaxWidth()
               .wrapContentHeight()
               .padding(horizontal = 10.dp, vertical = 5.dp)
-              .navigationBarsPadding(),
+              .windowInsetsPadding(WindowInsets.navigationBars),
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           if (isLoading) {
@@ -148,6 +162,7 @@ fun BottomSheet(
                 }
               }
             }
+            HorizontalDivider(Modifier.padding(8.dp))
           }
         }
 
@@ -157,14 +172,5 @@ fun BottomSheet(
         // Screen content
       },
     )
-
-    //      onDismissRequest = {
-    //        viewModel.hideBottomSheet()
-    //        viewModel.clearTranscription()
-    //        if (activity != null && finishAfter == true) {
-    //          activity.finish()
-    //        }
-    //      },
-
   }
 }
