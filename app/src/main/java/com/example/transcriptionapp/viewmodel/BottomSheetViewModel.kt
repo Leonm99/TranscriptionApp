@@ -16,6 +16,7 @@ import com.example.transcriptionapp.com.example.transcriptionapp.model.Transcrip
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.util.FileUtils
+import com.example.transcriptionapp.util.FileUtils.clearTempDir
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -117,7 +118,7 @@ constructor(
         withContext(Dispatchers.IO) {
           val audioFile = FileUtils.getFileFromUri(audioUri, context)
           val transcriptionResult = openAiService.whisper(audioFile!!)
-
+          clearTempDir(context)
           Log.d(TAG, "Transcribing audio...")
           _transcription.value =
             _transcription.value.copy(

@@ -1,5 +1,7 @@
 package com.example.transcriptionapp.ui.components
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -88,7 +90,6 @@ fun TranscriptionCard(
       modifier
         .fillMaxWidth()
         .wrapContentHeight()
-        .heightIn(max = 400.dp, min = 50.dp)
         .combinedClickable(
           onClick = { if (isSelectionMode) onSelected() },
           onLongClick = { onSelected() },
@@ -96,108 +97,115 @@ fun TranscriptionCard(
     shape = RoundedCornerShape(12.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
   ) {
-    Column(
-      modifier = Modifier.fillMaxWidth().padding(15.dp),
-      verticalArrangement = Arrangement.Top,
-      horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
-        horizontalArrangement = Arrangement.SpaceBetween,
+    // Use Box to stack elements and position dots at the bottom
+    Box(contentAlignment = Alignment.BottomCenter) {
+      Column(
+        modifier = Modifier.fillMaxWidth().padding(15.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
       ) {
-        Column(
-          modifier = Modifier.wrapContentSize().offset(y = 6.dp),
-          horizontalAlignment = Alignment.Start,
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
+          horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-          Text(text = titleText, style = MaterialTheme.typography.titleMedium)
+          Column(
+            modifier = Modifier.wrapContentSize().offset(y = 6.dp),
+            horizontalAlignment = Alignment.Start,
+          ) {
+            Text(text = titleText, style = MaterialTheme.typography.titleMedium)
 
-          Text(
-            modifier = Modifier.padding(bottom = 8.dp),
-            text = transcription.timestamp,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-          )
-        }
+            Text(
+              modifier = Modifier.padding(bottom = 8.dp),
+              text = transcription.timestamp,
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.outline,
+            )
+          }
 
-        if (isSelectionMode) {
-          Checkbox(checked = isSelected, onCheckedChange = { onSelected() }, modifier = Modifier)
-        } else {
-          IconButton(
-            onClick = {
-              onCopyClicked(
-                if (pagerState.currentPage == 0) transcription.transcriptionText
-                else if (pagerState.currentPage == 1 && transcription.summaryText != null)
-                  transcription.summaryText
-                else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
+          if (isSelectionMode) {
+            Checkbox(checked = isSelected, onCheckedChange = { onSelected() }, modifier = Modifier)
+          } else {
+            IconButton(
+              onClick = {
+                onCopyClicked(
+                  if (pagerState.currentPage == 0) transcription.transcriptionText
+                  else if (pagerState.currentPage == 1 && transcription.summaryText != null)
+                    transcription.summaryText
+                  else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
+                )
+              },
+              modifier = Modifier,
+            ) {
+              Icon(
+                Icons.Filled.ContentCopy,
+                contentDescription = "Copy",
+                modifier = Modifier.size(20.dp),
               )
-            },
-            modifier = Modifier,
-          ) {
-            Icon(
-              Icons.Filled.ContentCopy,
-              contentDescription = "Copy",
-              modifier = Modifier.size(20.dp),
-            )
+            }
+          }
+        }
+
+        HorizontalPager(
+          state = pagerState,
+          modifier =
+            Modifier.fillMaxWidth()
+              .animateContentSize(animationSpec = tween(durationMillis = 150, delayMillis = 0))
+              .heightIn(min = 50.dp, max = 350.dp),
+        ) { page ->
+          val scrollState = rememberScrollState()
+
+          Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+            if (page == 0) {
+              Text(
+                modifier =
+                  Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .nestedScroll(rememberNestedScrollInteropConnection())
+                    .verticalScroll(scrollState)
+                    .verticalScrollbar(scrollState)
+                    .padding(top = 8.dp),
+                text = transcription.transcriptionText,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyMedium,
+              )
+            } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
+              Text(
+                modifier =
+                  Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .nestedScroll(rememberNestedScrollInteropConnection())
+                    .verticalScroll(scrollState)
+                    .verticalScrollbar(scrollState)
+                    .padding(top = 8.dp),
+                text = transcription.summaryText,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyMedium,
+              )
+            } else if (
+              page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
+                !transcription.translationText.isNullOrEmpty()
+            ) {
+              val scrollState = rememberScrollState()
+
+              Text(
+                modifier =
+                  Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .nestedScroll(rememberNestedScrollInteropConnection())
+                    .verticalScroll(scrollState)
+                    .verticalScrollbar(scrollState)
+                    .padding(top = 8.dp),
+                text = transcription.translationText,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyMedium,
+              )
+            }
           }
         }
       }
 
-      HorizontalPager(
-        state = pagerState,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 350.dp),
-      ) { page ->
-        val scrollState = rememberScrollState()
-
-        Column(modifier = Modifier.fillMaxWidth()) {
-          if (page == 0) {
-            Text(
-              modifier =
-                Modifier.fillMaxWidth()
-                  .wrapContentHeight()
-                  .nestedScroll(rememberNestedScrollInteropConnection())
-                  .verticalScroll(scrollState)
-                  .verticalScrollbar(scrollState)
-                  .padding(top = 8.dp),
-              text = transcription.transcriptionText,
-              textAlign = TextAlign.Start,
-              style = MaterialTheme.typography.bodyMedium,
-            )
-          } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
-            Text(
-              modifier =
-                Modifier.fillMaxWidth()
-                  .wrapContentHeight()
-                  .nestedScroll(rememberNestedScrollInteropConnection())
-                  .verticalScroll(scrollState)
-                  .verticalScrollbar(scrollState)
-                  .padding(top = 8.dp),
-              text = transcription.summaryText,
-              textAlign = TextAlign.Start,
-              style = MaterialTheme.typography.bodyMedium,
-            )
-          } else if (
-            page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
-              !transcription.translationText.isNullOrEmpty()
-          ) {
-            val scrollState = rememberScrollState()
-
-            Text(
-              modifier =
-                Modifier.fillMaxWidth()
-                  .wrapContentHeight()
-                  .nestedScroll(rememberNestedScrollInteropConnection())
-                  .verticalScroll(scrollState)
-                  .verticalScrollbar(scrollState)
-                  .padding(top = 8.dp),
-              text = transcription.translationText,
-              textAlign = TextAlign.Start,
-              style = MaterialTheme.typography.bodyMedium,
-            )
-          }
-        }
-      }
-
+      // Dots Row is now inside the Box and aligned to the bottom
       Row(
         Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
         horizontalArrangement = Arrangement.Center,

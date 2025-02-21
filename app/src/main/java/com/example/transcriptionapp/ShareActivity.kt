@@ -88,12 +88,10 @@ class ShareActivity : ComponentActivity() {
     if (intent?.action == Intent.ACTION_SEND) {
       when {
         intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true -> {
-          bottomSheetViewModel.showBottomSheet()
           handleAudioOrVideoIntent(intent)
         }
 
         intent.type?.startsWith("text/") == true -> {
-          bottomSheetViewModel.showBottomSheet()
           handleTextIntent(intent)
         }
       }

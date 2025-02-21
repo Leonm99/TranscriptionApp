@@ -4,7 +4,6 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -20,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Addchart
@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -156,7 +157,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         )
       }
     } else {
-      LazyColumn {
+      LazyColumn(modifier = Modifier) {
         items(transcriptionList) { transcription ->
           val isSelected = selectedItems.contains(transcription.id)
           TranscriptionCard(
@@ -175,7 +176,10 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
                 isSelectionMode.value = true
               }
             },
-            modifier = Modifier.padding(5.dp).animateContentSize(),
+            modifier =
+              Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)
+                .shadow(elevation = 5.dp, shape = RoundedCornerShape(12.dp)),
+            // Increased horizontal and vertical padding
           )
         }
       }
