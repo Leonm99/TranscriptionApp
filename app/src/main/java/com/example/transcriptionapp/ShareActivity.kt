@@ -39,19 +39,30 @@ class ShareActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
 
     enableEdgeToEdge()
-
+    configureWindow()
     // Only process the initial intent in onCreate
     if (savedInstanceState == null) {
       handleIntent(intent)
     }
 
-    configureWindow()
-
     setContent {
       TranscriptionAppTheme {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ShareScreen) {
-          composable<ShareScreen> { BottomSheet(bottomSheetViewModel, this@ShareActivity, true) }
+          composable<ShareScreen> {
+            //            val isBottomSheetVisible =
+            //
+            // bottomSheetViewModel.isBottomSheetVisible.collectAsStateWithLifecycle().value
+            //            AnimatedVisibility(isBottomSheetVisible, exit = fadeOut(), enter =
+            // fadeIn()) {
+            //              Box(
+            //                modifier =
+            //
+            // Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black)
+            //              )
+            //            }
+            BottomSheet(bottomSheetViewModel, this@ShareActivity, true)
+          }
         }
       }
     }
@@ -60,7 +71,7 @@ class ShareActivity : ComponentActivity() {
   private fun configureWindow() {
     window.apply {
       setBackgroundDrawable(0.toDrawable())
-      setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+      setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
       // On Android 12 and higher, TYPE_APPLICATION_OVERLAY is deprecated, and we use
       // TYPE_APPLICATION_ATTACHED_DIALOG instead
       setType(
@@ -96,6 +107,7 @@ class ShareActivity : ComponentActivity() {
       Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
       // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
       bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
+      bottomSheetViewModel.showBottomSheet()
     }
   }
 

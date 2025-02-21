@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -29,15 +29,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.transcriptionapp.util.copyToClipboard
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 import io.morfly.compose.bottomsheet.material3.BottomSheetScaffold
 import io.morfly.compose.bottomsheet.material3.rememberBottomSheetScaffoldState
 import io.morfly.compose.bottomsheet.material3.rememberBottomSheetState
+import kotlinx.coroutines.delay
 
 enum class SheetValue {
   Hidden,
@@ -58,6 +63,7 @@ fun BottomSheet(
   val showBottomSheet by viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
   val transcription = viewModel.transcription.collectAsStateWithLifecycle().value
   val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+  val shouldFinishActivity by viewModel.shouldFinishActivity.collectAsStateWithLifecycle()
 
   val context = LocalContext.current
   val sheetState =
@@ -75,14 +81,14 @@ fun BottomSheet(
       SheetValue.Hidden -> {
         Log.d("BottomSheet", "Hidden")
         viewModel.hideBottomSheet()
-        sheetState.snapTo(SheetValue.Expanded)
         viewModel.clearTranscription()
-        if (activity != null && finishAfter == true && !showBottomSheet) {
-          Log.d("BottomSheet", "Finish Activity")
-          activity.finish()
+        if (finishAfter == true) {
+          viewModel.finishActivity() // Signal to finish after delay
         }
       }
-      SheetValue.Expanded -> {}
+      SheetValue.Expanded -> {
+        viewModel.dontFinishActivity()
+      }
     }
   }
 
@@ -91,6 +97,24 @@ fun BottomSheet(
       sheetState.animateTo(SheetValue.Expanded)
     } else {
       sheetState.snapTo(SheetValue.Hidden)
+    }
+  }
+  var delayedFinish by remember { mutableStateOf(true) }
+
+  LaunchedEffect(shouldFinishActivity) {
+    if (shouldFinishActivity && activity != null) {
+      Log.d("BottomSheet", "shouldFinishActivity is true")
+      delay(2000) // 2 seconds delay
+      if (shouldFinishActivity && delayedFinish) { // Double check after delay
+        Log.d("BottomSheet", "Finish Activity triggered after 2 seconds delay")
+        activity.finish()
+      } else {
+        delayedFinish = false
+        Log.d(
+          "BottomSheet",
+          "shouldFinishActivity changed to false within 2 seconds, activity finish cancelled",
+        )
+      }
     }
   }
 
@@ -104,7 +128,6 @@ fun BottomSheet(
             Modifier.animateContentSize()
               .fillMaxWidth()
               .wrapContentHeight()
-              .navigationBarsPadding()
               .padding(horizontal = 10.dp, vertical = 5.dp),
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -121,7 +144,7 @@ fun BottomSheet(
               TranscriptionCard(
                 modifier = Modifier,
                 transcription,
-                { text -> viewModel.copyToClipboard(context, text) },
+                { text -> copyToClipboard(context, text) },
                 false,
                 false,
                 {},
@@ -168,14 +191,13 @@ fun BottomSheet(
               }
             }
             HorizontalDivider(Modifier.padding(8.dp))
+            Spacer(modifier = Modifier.padding(vertical = 10.dp))
           }
         }
 
         // Bottom sheet content
       },
-      content = {
-        // Screen content
-      },
+      content = {},
     )
   }
 }

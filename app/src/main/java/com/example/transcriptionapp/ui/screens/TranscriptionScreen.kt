@@ -3,6 +3,11 @@ package com.example.transcriptionapp.ui.screens
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +44,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.transcriptionapp.R
 import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.ui.components.TranscriptionCard
+import com.example.transcriptionapp.util.copyToClipboard
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,11 +63,10 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
 
   val transcriptionListState = viewModel.transcriptionList.collectAsStateWithLifecycle()
   val transcriptionList = transcriptionListState.value
-  viewModel.isLoading.collectAsStateWithLifecycle(true)
-  viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
+  val isBottomSheetVisible = viewModel.isBottomSheetVisible.collectAsStateWithLifecycle().value
   val selectedItems = remember { mutableStateListOf<Int>() }
-  val isSelectionMode = remember { mutableStateOf<Boolean>(false) }
-  val isSelectAll = remember { mutableStateOf<Boolean>(false) }
+  var isSelectionMode = remember { mutableStateOf<Boolean>(false) }
+  var isSelectAll = remember { mutableStateOf<Boolean>(false) }
   val activity = LocalContext.current
   val launcher =
     rememberLauncherForActivityResult(
@@ -85,14 +92,17 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
             onClick = {
               isSelectionMode.value = false
               selectedItems.clear()
+              isSelectAll.value = false
             }
           ) {
             Icon(imageVector = Icons.Filled.Cancel, contentDescription = "Cancel")
           }
           IconButton(
             onClick = {
-              viewModel.onDeleteSelectedClick(selectedItems)
+              viewModel.onDeleteSelectedClick(selectedItems.toList())
+              selectedItems.clear()
               isSelectionMode.value = false
+              isSelectAll.value = false
             }
           ) {
             Icon(imageVector = Icons.Filled.DeleteSweep, contentDescription = "Delete")
@@ -105,17 +115,17 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
       },
     )
 
-    if (isSelectionMode.value) {
+    AnimatedVisibility(
+      isSelectionMode.value,
+      modifier = Modifier.align(Alignment.End).padding(end = 8.dp, top = 8.dp),
+    ) {
       FilterChip(
-        modifier = Modifier.align(Alignment.End).padding(end = 8.dp, top = 8.dp),
+        modifier = Modifier.animateEnterExit(),
         onClick = {
           isSelectAll.value = !isSelectAll.value
+          selectedItems.clear()
           if (isSelectAll.value) {
-            for (transcription in transcriptionList) {
-              selectedItems.add(transcription.id)
-            }
-          } else {
-            selectedItems.clear()
+            selectedItems.addAll(transcriptionList.map { it.id })
           }
         },
         label = { Text("Select all") },
@@ -146,30 +156,31 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         )
       }
     } else {
-
-      LazyColumn(modifier = Modifier.padding(top = 5.dp)) {
+      LazyColumn {
         items(transcriptionList) { transcription ->
           val isSelected = selectedItems.contains(transcription.id)
           TranscriptionCard(
             transcription = transcription,
-            onCopyClicked = { viewModel.copyToClipboard(activity, it) },
+            onCopyClicked = { copyToClipboard(activity, it) },
             isSelected = isSelected,
             isSelectionMode = isSelectionMode.value,
             onSelected = {
               if (isSelected) {
                 selectedItems.remove(transcription.id)
+                if (selectedItems.isEmpty()) {
+                  isSelectAll.value = false
+                }
               } else {
                 selectedItems.add(transcription.id)
                 isSelectionMode.value = true
               }
             },
-            modifier = Modifier.padding(5.dp),
+            modifier = Modifier.padding(5.dp).animateContentSize(),
           )
         }
       }
     }
   }
-
   Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars)) {
     Row(Modifier.padding(vertical = 20.dp, horizontal = 30.dp).align(Alignment.BottomEnd)) {
       FloatingActionButton(
@@ -186,6 +197,10 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         Icon(imageVector = Icons.Filled.Add, contentDescription = "Transcribe File")
       }
     }
+  }
+
+  AnimatedVisibility(isBottomSheetVisible, exit = fadeOut(), enter = fadeIn()) {
+    Box(modifier = Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black))
   }
 
   BottomSheet(viewModel)

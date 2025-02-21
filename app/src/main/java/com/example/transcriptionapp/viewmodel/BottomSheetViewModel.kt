@@ -1,13 +1,13 @@
 package com.example.transcriptionapp.viewmodel
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.api.OpenAiService
@@ -47,9 +47,6 @@ constructor(
 
   private lateinit var openAiService: OpenAiService
 
-  private val _isLoading = MutableStateFlow(true)
-  val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
   private val _transcription =
     MutableStateFlow(
       Transcription(
@@ -60,7 +57,9 @@ constructor(
         timestamp = "null",
       )
     )
+
   val transcription: StateFlow<Transcription> = _transcription.asStateFlow()
+  val visiblePermissionDialogQueue = mutableStateListOf<String>()
 
   private val _isBottomSheetVisible = MutableStateFlow(false)
   val isBottomSheetVisible: StateFlow<Boolean> = _isBottomSheetVisible.asStateFlow()
@@ -68,12 +67,26 @@ constructor(
   private val _transcriptionList = MutableStateFlow<List<Transcription>>(emptyList())
   val transcriptionList: StateFlow<List<Transcription>> = _transcriptionList.asStateFlow()
 
+  private val _isLoading = MutableStateFlow(true)
+  val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+  private val _shouldFinishActivity = MutableStateFlow(false)
+  val shouldFinishActivity: StateFlow<Boolean> = _shouldFinishActivity.asStateFlow()
+
   fun hideBottomSheet() {
     _isBottomSheetVisible.value = false
   }
 
   fun showBottomSheet() {
     _isBottomSheetVisible.value = true
+  }
+
+  fun finishActivity() {
+    _shouldFinishActivity.value = true
+  }
+
+  fun dontFinishActivity() {
+    _shouldFinishActivity.value = false
   }
 
   init {
@@ -100,10 +113,12 @@ constructor(
       }
 
       try {
-        val audioFile = withContext(Dispatchers.IO) { FileUtils.getFileFromUri(audioUri, context) }
+
         withContext(Dispatchers.IO) {
-          Log.d(TAG, "Transcribing audio...")
+          val audioFile = FileUtils.getFileFromUri(audioUri, context)
           val transcriptionResult = openAiService.whisper(audioFile!!)
+
+          Log.d(TAG, "Transcribing audio...")
           _transcription.value =
             _transcription.value.copy(
               transcriptionText = transcriptionResult,
@@ -118,6 +133,7 @@ constructor(
         // Handle error, e.g., update UI with error message
         Log.e(TAG, "Error transcribing audio", e)
         _isLoading.value = false
+
         // ...
       }
     }
@@ -178,13 +194,6 @@ constructor(
     }
   }
 
-  fun copyToClipboard(context: Context, text: String) {
-    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("Transcription", text)
-    clipboardManager.setPrimaryClip(clip)
-    Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
-  }
-
   fun onDeleteSelectedClick(selectedItems: List<Int>) {
     viewModelScope.launch {
       withContext(Dispatchers.IO) {
@@ -219,5 +228,19 @@ constructor(
 
   fun showToast(context: Context, text: String, long: Boolean = false) {
     Toast.makeText(context, text, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
+  }
+
+  fun dismissDialog() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      visiblePermissionDialogQueue.removeFirst()
+    } else {
+      visiblePermissionDialogQueue.removeAt(0)
+    }
+  }
+
+  fun onPermissionResult(permission: String, isGranted: Boolean) {
+    if (!isGranted && !visiblePermissionDialogQueue.contains(permission)) {
+      visiblePermissionDialogQueue.add(permission)
+    }
   }
 }
