@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.ui.components.AudioPermissionTextProvider
 import com.example.transcriptionapp.ui.components.PermissionDialog
 import com.example.transcriptionapp.ui.screens.SettingsScreen
@@ -25,21 +26,32 @@ import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 import com.example.transcriptionapp.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
   val bottomSheetViewModel: BottomSheetViewModel by viewModels<BottomSheetViewModel>()
   val settingsViewModel: SettingsViewModel by viewModels<SettingsViewModel>()
+  @Inject lateinit var settingsRepository: SettingsRepository
+  var dynamicColor: Boolean = true
 
   private val permissionsToRequest = arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
 
+    super.onCreate(savedInstanceState)
+    CoroutineScope(Dispatchers.IO).launch {
+      settingsRepository.userPreferencesFlow.collect { userPreferences ->
+        dynamicColor = userPreferences.dynamicColor
+      }
+    }
     enableEdgeToEdge()
     setContent {
-      TranscriptionAppTheme {
+      TranscriptionAppTheme(dynamicColor = dynamicColor) {
         val navController = rememberNavController()
         val dialogQueue = bottomSheetViewModel.visiblePermissionDialogQueue
 

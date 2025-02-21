@@ -38,4 +38,8 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Us
   suspend fun setMockApi(mockApi: Boolean) {
     dataStore.updateData { currentSettings -> currentSettings.copy(mockApi = mockApi) }
   }
+
+  suspend fun setDynamicColor(dynamicColor: Boolean) {
+    dataStore.updateData { currentSettings -> currentSettings.copy(dynamicColor = dynamicColor) }
+  }
 }

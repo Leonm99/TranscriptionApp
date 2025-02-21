@@ -78,4 +78,8 @@ constructor(
   fun setMockApi(mockApi: Boolean) {
     viewModelScope.launch(Dispatchers.IO) { settingsRepository.setMockApi(mockApi) }
   }
+
+  fun setDynamicColor(dynamicColor: Boolean) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setDynamicColor(dynamicColor) }
+  }
 }

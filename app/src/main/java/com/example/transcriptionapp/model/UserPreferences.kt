@@ -17,6 +17,7 @@ data class UserPreferences(
   val selectedModel: String = "gpt-4o-mini",
   val formatSwitchState: Boolean = false,
   val mockApi: Boolean = false,
+  val dynamicColor: Boolean = true,
 )
 
 object UserPreferencesSerializer : Serializer<UserPreferences> {
