@@ -1,7 +1,5 @@
 package com.example.transcriptionapp.ui.components
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -148,10 +146,7 @@ fun TranscriptionCard(
 
         HorizontalPager(
           state = pagerState,
-          modifier =
-            Modifier.fillMaxWidth()
-              .animateContentSize(animationSpec = tween(durationMillis = 150, delayMillis = 0))
-              .heightIn(min = 50.dp, max = 350.dp),
+          modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 350.dp),
         ) { page ->
           val scrollState = rememberScrollState()
 
@@ -212,8 +207,8 @@ fun TranscriptionCard(
       ) {
         repeat(pagerState.pageCount) { iteration ->
           val color =
-            if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.onSecondary
-            else MaterialTheme.colorScheme.onSecondaryContainer
+            if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.onSecondaryContainer
+            else MaterialTheme.colorScheme.onSecondary
           Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(4.dp))
         }
       }

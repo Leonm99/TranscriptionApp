@@ -19,6 +19,7 @@ import com.example.transcriptionapp.util.FileUtils
 import com.example.transcriptionapp.util.FileUtils.clearTempDir
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -83,7 +84,12 @@ constructor(
   }
 
   fun finishActivity() {
-    _shouldFinishActivity.value = true
+    viewModelScope.launch {
+      withContext(Dispatchers.Main) {
+        delay(2)
+        _shouldFinishActivity.value = true
+      }
+    }
   }
 
   fun dontFinishActivity() {
@@ -97,7 +103,6 @@ constructor(
       }
     }
     viewModelScope.launch {
-      _isBottomSheetVisible.value = false
       _isLoading.value = true
       transcriptionRepository.allTranscriptions.collect { transcriptions ->
         _transcriptionList.value = transcriptions
@@ -107,9 +112,10 @@ constructor(
   }
 
   fun onAudioSelected(audioUri: Uri, context: Context) {
+
     viewModelScope.launch {
       withContext(Dispatchers.Main) {
-        _isBottomSheetVisible.value = true
+        showBottomSheet()
         _isLoading.value = true
       }
 
@@ -117,18 +123,17 @@ constructor(
 
         withContext(Dispatchers.IO) {
           val audioFile = FileUtils.getFileFromUri(audioUri, context)
+
           val transcriptionResult = openAiService.whisper(audioFile!!)
           clearTempDir(context)
           Log.d(TAG, "Transcribing audio...")
+
           _transcription.value =
             _transcription.value.copy(
               transcriptionText = transcriptionResult,
               timestamp = formatTimestamp(System.currentTimeMillis()),
             )
-          withContext(Dispatchers.Main) {
-            _isLoading.value = false
-            _isBottomSheetVisible.value = true
-          }
+          withContext(Dispatchers.Main) { _isLoading.value = false }
         }
       } catch (e: Exception) {
         // Handle error, e.g., update UI with error message
