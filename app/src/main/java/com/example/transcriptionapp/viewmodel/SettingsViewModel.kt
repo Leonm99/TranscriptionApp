@@ -1,5 +1,6 @@
 package com.example.transcriptionapp.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
@@ -55,8 +56,8 @@ constructor(
   }
 
   fun setUserApiKey(key: String) {
-
     viewModelScope.launch(Dispatchers.IO) { settingsRepository.setUserApiKey(key) }
+    Log.d(TAG, "User API Key: $key")
   }
 
   fun deleteDatabase() {

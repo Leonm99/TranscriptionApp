@@ -58,7 +58,6 @@ dependencies {
   implementation(libs.convert.gson)
   implementation(libs.okhttp)
   implementation(libs.logging.inceptor)
-  implementation(libs.openai.client)
   implementation(libs.ktor.client.android)
 
   implementation(libs.androidx.lifecycle.viewmodel.compose)

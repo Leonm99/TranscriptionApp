@@ -126,7 +126,7 @@ fun BottomSheet(
           Modifier.fillMaxWidth()
             .wrapContentHeight()
             .padding(horizontal = 10.dp, vertical = 5.dp)
-            .padding(bottom = bottomPadding), // Apply bottomPadding here
+            .padding(bottom = bottomPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
       ) {
         if (isLoading) {
