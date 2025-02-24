@@ -20,6 +20,10 @@ import com.example.transcriptionapp.util.FileUtils
 import com.example.transcriptionapp.util.matchUrlFromSharedText
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 private const val TAG = "ShareActivity"
@@ -41,10 +45,6 @@ class ShareActivity : ComponentActivity() {
     enableEdgeToEdge()
     configureWindow()
 
-    if (savedInstanceState == null) {
-      handleIntent(intent)
-    }
-
     setContent {
       TranscriptionAppTheme {
         val navController = rememberNavController()
@@ -64,6 +64,13 @@ class ShareActivity : ComponentActivity() {
             BottomSheet(bottomSheetViewModel, this@ShareActivity, true)
           }
         }
+      }
+    }
+
+    if (savedInstanceState == null) {
+      CoroutineScope(Dispatchers.IO).launch {
+        delay(1000)
+        handleIntent(intent)
       }
     }
   }
@@ -89,6 +96,7 @@ class ShareActivity : ComponentActivity() {
       when {
         intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true -> {
           handleAudioOrVideoIntent(intent)
+          bottomSheetViewModel.showBottomSheet()
         }
 
         intent.type?.startsWith("text/") == true -> {
@@ -104,6 +112,7 @@ class ShareActivity : ComponentActivity() {
     audioFile?.let { file ->
       Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
       // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
+
       bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
     }
   }

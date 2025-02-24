@@ -19,7 +19,6 @@ import com.example.transcriptionapp.util.FileUtils
 import com.example.transcriptionapp.util.FileUtils.clearTempDir
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,12 +83,7 @@ constructor(
   }
 
   fun finishActivity() {
-    viewModelScope.launch {
-      withContext(Dispatchers.Main) {
-        delay(2)
-        _shouldFinishActivity.value = true
-      }
-    }
+    viewModelScope.launch { _shouldFinishActivity.value = true }
   }
 
   fun dontFinishActivity() {
@@ -133,7 +127,10 @@ constructor(
               transcriptionText = transcriptionResult,
               timestamp = formatTimestamp(System.currentTimeMillis()),
             )
-          withContext(Dispatchers.Main) { _isLoading.value = false }
+          withContext(Dispatchers.Main) {
+            _isLoading.value = false
+            showBottomSheet()
+          }
         }
       } catch (e: Exception) {
         // Handle error, e.g., update UI with error message

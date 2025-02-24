@@ -32,6 +32,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +47,9 @@ import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 import io.morfly.compose.bottomsheet.material3.BottomSheetScaffold
 import io.morfly.compose.bottomsheet.material3.rememberBottomSheetScaffoldState
 import io.morfly.compose.bottomsheet.material3.rememberBottomSheetState
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 enum class SheetValue {
   Hidden,
@@ -66,9 +73,12 @@ fun BottomSheet(
   val shouldFinishActivity by viewModel.shouldFinishActivity.collectAsStateWithLifecycle()
 
   val context = LocalContext.current
+  val coroutineScope = rememberCoroutineScope()
+  var timerJob: Job? by remember { mutableStateOf(null) }
+
   val sheetState =
     rememberBottomSheetState(
-      initialValue = SheetValue.Expanded,
+      initialValue = SheetValue.Hidden,
       defineValues = {
         SheetValue.Hidden at height(0.dp)
         SheetValue.Expanded at contentHeight
@@ -77,17 +87,23 @@ fun BottomSheet(
   val scaffoldState = rememberBottomSheetScaffoldState(sheetState)
 
   LaunchedEffect(sheetState.currentValue) {
+    timerJob?.cancel()
     Log.d("BottomSheetLog", "sheetState.currentValue changed to: ${sheetState.currentValue}")
     when (sheetState.currentValue) {
       SheetValue.Hidden -> {
-        viewModel.hideBottomSheet()
-        viewModel.clearTranscription()
-        if (finishAfter == true) {
-          viewModel.finishActivity()
-        }
+        timerJob =
+          coroutineScope.launch {
+            delay(5000)
+            Log.d("BottomSheetLog", "5 seconds have passed")
+            viewModel.finishActivity()
+          }
       }
       SheetValue.Expanded -> {
-        viewModel.dontFinishActivity()
+        if (timerJob?.isActive == true) {
+          timerJob?.cancel()
+        }
+        timerJob = null
+        Log.d("BottomSheetLog", "Timer Job Cancelled")
       }
     }
   }
