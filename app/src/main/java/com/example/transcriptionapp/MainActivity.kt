@@ -23,11 +23,14 @@ import com.example.transcriptionapp.ui.components.PermissionDialog
 import com.example.transcriptionapp.ui.screens.SettingsScreen
 import com.example.transcriptionapp.ui.screens.TranscriptionScreen
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
+import com.example.transcriptionapp.util.showToast
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
+import com.example.transcriptionapp.viewmodel.DialogType
 import com.example.transcriptionapp.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -38,6 +41,8 @@ class MainActivity : ComponentActivity() {
   val settingsViewModel: SettingsViewModel by viewModels<SettingsViewModel>()
   @Inject lateinit var settingsRepository: SettingsRepository
   var dynamicColor: Boolean = true
+  var isApiKeyPresent: Boolean = false
+  val context = this
 
   private val permissionsToRequest = arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
 
@@ -47,6 +52,7 @@ class MainActivity : ComponentActivity() {
     CoroutineScope(Dispatchers.IO).launch {
       settingsRepository.userPreferencesFlow.collect { userPreferences ->
         dynamicColor = userPreferences.dynamicColor
+        isApiKeyPresent = userPreferences.userApiKey.isNotBlank()
       }
     }
     enableEdgeToEdge()
@@ -70,6 +76,16 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(key1 = Unit) {
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             multiplePermissionResultLauncher.launch(permissionsToRequest)
+          }
+        }
+
+        LaunchedEffect(isApiKeyPresent) {
+          if (isApiKeyPresent) return@LaunchedEffect
+          CoroutineScope(Dispatchers.Main).launch {
+            delay(3000)
+            showToast(context, "Please set your API key.", true)
+            navController.navigate(SettingsRoute)
+            settingsViewModel.showDialog(DialogType.API)
           }
         }
 

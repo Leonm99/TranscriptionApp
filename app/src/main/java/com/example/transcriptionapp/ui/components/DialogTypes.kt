@@ -34,7 +34,7 @@ fun ApiKeyDialog(viewModel: SettingsViewModel) {
         value = userInput.value,
         onValueChange = { userInput.value = it },
         label = { Text("Enter text") },
-        maxLines = 5, // Allows up to 5 lines
+        maxLines = 5,
       )
     },
     confirmButton =
