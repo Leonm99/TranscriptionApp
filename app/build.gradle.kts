@@ -36,9 +36,9 @@ android {
   }
   kotlinOptions { jvmTarget = "11" }
   buildFeatures { compose = true }
-
-  room { schemaDirectory("$projectDir/schemas") }
 }
+
+room { schemaDirectory("$projectDir/schemas") }
 
 dependencies {
   implementation(libs.androidx.core.ktx)
