@@ -207,5 +207,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
     Box(modifier = Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black))
   }
 
-  BottomSheet(viewModel)
+  if (isBottomSheetVisible) {
+    BottomSheet(viewModel)
+  }
 }

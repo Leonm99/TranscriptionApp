@@ -61,7 +61,7 @@ class ShareActivity : ComponentActivity() {
             // Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black)
             //              )
             //            }
-            BottomSheet(bottomSheetViewModel, this@ShareActivity, true)
+            BottomSheet(bottomSheetViewModel, this@ShareActivity)
           }
         }
       }

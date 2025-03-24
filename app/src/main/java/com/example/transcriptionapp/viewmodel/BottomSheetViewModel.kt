@@ -71,23 +71,12 @@ constructor(
   private val _isLoading = MutableStateFlow(true)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-  private val _shouldFinishActivity = MutableStateFlow(false)
-  val shouldFinishActivity: StateFlow<Boolean> = _shouldFinishActivity.asStateFlow()
-
   fun hideBottomSheet() {
     _isBottomSheetVisible.value = false
   }
 
   fun showBottomSheet() {
     _isBottomSheetVisible.value = true
-  }
-
-  fun finishActivity() {
-    viewModelScope.launch { _shouldFinishActivity.value = true }
-  }
-
-  fun dontFinishActivity() {
-    _shouldFinishActivity.value = false
   }
 
   init {

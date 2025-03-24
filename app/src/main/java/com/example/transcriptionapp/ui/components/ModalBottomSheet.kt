@@ -66,7 +66,6 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
   val showBottomSheet by viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
   val transcription = viewModel.transcription.collectAsStateWithLifecycle().value
   val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-  val shouldFinishActivity by viewModel.shouldFinishActivity.collectAsStateWithLifecycle()
 
   val context = LocalContext.current
   val coroutineScope = rememberCoroutineScope()
@@ -91,7 +90,9 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
           coroutineScope.launch {
             delay(2000)
             Log.d("BottomSheetLog", "2 seconds have passed")
-            viewModel.finishActivity()
+            viewModel.showToast(context, "Saved")
+            viewModel.onSaveClick()
+            activity?.finish()
           }
       }
       SheetValue.Expanded -> {
@@ -110,16 +111,6 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
       sheetState.animateTo(SheetValue.Expanded)
     } else {
       sheetState.animateTo(SheetValue.Hidden)
-    }
-  }
-
-  LaunchedEffect(shouldFinishActivity) {
-    if (shouldFinishActivity && activity != null) {
-      viewModel.showToast(context, "Saved")
-      viewModel.onSaveClick()
-      Log.d("BottomSheet", "shouldFinishActivity is true")
-      Log.d("BottomSheet", "Finish Activity triggered after 2 seconds delay")
-      activity.finish()
     }
   }
 
