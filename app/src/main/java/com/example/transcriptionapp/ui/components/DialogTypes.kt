@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -24,14 +23,8 @@ import com.example.transcriptionapp.R
 import com.example.transcriptionapp.viewmodel.SettingsViewModel
 
 @Composable
-fun ApiKeyDialog(viewModel: SettingsViewModel, userApiKey: String) {
+fun ApiKeyDialog(viewModel: SettingsViewModel) {
   val userInput = rememberSaveable { mutableStateOf("") }
-
-  LaunchedEffect(key1 = userApiKey) {
-    if (!userApiKey.isBlank() && userInput.value.isBlank()) {
-      userInput.value = userApiKey
-    }
-  }
 
   AlertDialog(
     onDismissRequest = { viewModel.hideDialog() },

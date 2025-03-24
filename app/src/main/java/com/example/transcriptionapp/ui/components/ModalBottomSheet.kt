@@ -93,8 +93,8 @@ fun BottomSheet(
       SheetValue.Hidden -> {
         timerJob =
           coroutineScope.launch {
-            delay(2000)
-            Log.d("BottomSheetLog", "2 seconds have passed")
+            delay(5000)
+            Log.d("BottomSheetLog", "5 seconds have passed")
             viewModel.finishActivity()
           }
       }
@@ -119,8 +119,6 @@ fun BottomSheet(
 
   LaunchedEffect(shouldFinishActivity) {
     if (shouldFinishActivity && activity != null) {
-      viewModel.showToast(context, "Saved")
-      viewModel.onSaveClick()
       Log.d("BottomSheet", "shouldFinishActivity is true")
       Log.d("BottomSheet", "Finish Activity triggered after 2 seconds delay")
       activity.finish()
