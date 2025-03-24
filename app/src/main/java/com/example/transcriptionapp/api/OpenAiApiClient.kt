@@ -17,7 +17,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -90,19 +89,20 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
 
     val useCorrection = isFormattingEnabled
     return try {
-      val response = client.newCall(request).execute()
-      if (!response.isSuccessful) {
-        println("Transcription failed: ${response.code} ${response.message}")
-        return "Transcription failed: ${response.code} ${response.message}"
-      }
-      val responseBody = response.body?.string()
-      val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-      val result = jsonResponse.jsonObject["text"]?.jsonPrimitive?.content ?: ""
+      client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) {
+          println("Transcription failed: ${response.code} ${response.message}")
+          return "Transcription failed: ${response.code} ${response.message}"
+        }
+        val responseBody = response.body?.string()
+        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
+        val result = jsonResponse.jsonObject["text"]?.jsonPrimitive?.content ?: ""
 
-      if (useCorrection) {
-        correctSpelling(result)
-      } else {
-        result
+        if (useCorrection) {
+          correctSpelling(result)
+        } else {
+          result
+        }
       }
     } catch (e: Exception) {
       Log.e("OpenAiHandler", "Error during transcription: ${e.message}", e)
@@ -134,23 +134,24 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
         .build()
 
     return try {
-      val response = client.newCall(request).execute()
-      if (!response.isSuccessful) {
-        println("Summary failed: ${response.code} ${response.message}")
-        return "Summary failed: ${response.code} ${response.message}"
+      client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) {
+          println("Summary failed: ${response.code} ${response.message}")
+          return "Summary failed: ${response.code} ${response.message}"
+        }
+        val responseBody = response.body?.string()
+        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
+        jsonResponse.jsonObject["choices"]
+          ?.jsonArray
+          ?.get(0)
+          ?.jsonObject
+          ?.get("message")
+          ?.jsonObject
+          ?.get("content")
+          ?.jsonPrimitive
+          ?.content
+          .orEmpty()
       }
-      val responseBody = response.body?.string()
-      val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-      jsonResponse.jsonObject["choices"]
-        ?.jsonArray
-        ?.get(0)
-        ?.jsonObject
-        ?.get("message")
-        ?.jsonObject
-        ?.get("content")
-        ?.jsonPrimitive
-        ?.content
-        .orEmpty()
     } catch (e: Exception) {
       Log.e("OpenAiHandler", "Error during summary: ${e.message}", e)
       return "Error during summary: ${e.message}"
@@ -181,23 +182,24 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
         .build()
 
     return try {
-      val response = client.newCall(request).execute()
-      if (!response.isSuccessful) {
-        println("Translation failed: ${response.code} ${response.message}")
-        return "Translation failed: ${response.code} ${response.message}"
+      client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) {
+          println("Translation failed: ${response.code} ${response.message}")
+          return "Translation failed: ${response.code} ${response.message}"
+        }
+        val responseBody = response.body?.string()
+        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
+        jsonResponse.jsonObject["choices"]
+          ?.jsonArray
+          ?.get(0)
+          ?.jsonObject
+          ?.get("message")
+          ?.jsonObject
+          ?.get("content")
+          ?.jsonPrimitive
+          ?.content
+          .orEmpty()
       }
-      val responseBody = response.body?.string()
-      val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-      jsonResponse.jsonObject["choices"]
-        ?.jsonArray
-        ?.get(0)
-        ?.jsonObject
-        ?.get("message")
-        ?.jsonObject
-        ?.get("content")
-        ?.jsonPrimitive
-        ?.content
-        .orEmpty()
     } catch (e: Exception) {
       Log.e("OpenAiHandler", "Error during translation: ${e.message}", e)
       return "Error during translation: ${e.message}"
@@ -227,23 +229,24 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
         .build()
 
     return try {
-      val response = client.newCall(request).execute()
-      if (!response.isSuccessful) {
-        println("Correction failed: ${response.code} ${response.message}")
-        return "Correction failed: ${response.code} ${response.message}"
+      client.newCall(request).execute().use { response ->
+        if (!response.isSuccessful) {
+          println("Correction failed: ${response.code} ${response.message}")
+          return "Correction failed: ${response.code} ${response.message}"
+        }
+        val responseBody = response.body?.string()
+        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
+        jsonResponse.jsonObject["choices"]
+          ?.jsonArray
+          ?.get(0)
+          ?.jsonObject
+          ?.get("message")
+          ?.jsonObject
+          ?.get("content")
+          ?.jsonPrimitive
+          ?.content
+          .orEmpty()
       }
-      val responseBody = response.body?.string()
-      val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-      jsonResponse.jsonObject["choices"]
-        ?.jsonArray
-        ?.get(0)
-        ?.jsonObject
-        ?.get("message")
-        ?.jsonObject
-        ?.get("content")
-        ?.jsonPrimitive
-        ?.content
-        .orEmpty()
     } catch (e: Exception) {
       Log.e("OpenAiHandler", "Error during correction: ${e.message}", e)
       return "Error during correction: ${e.message}"
@@ -261,17 +264,16 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
 
       repeat(MAX_RETRIES) { attempt ->
         try {
-          val response: Response = client.newCall(request).execute()
-          val isApiKeyValid = response.isSuccessful
-          if (isApiKeyValid) {
-            response.close()
-            return@withContext true
-          }
+          client.newCall(request).execute().use { response ->
+            val isApiKeyValid = response.isSuccessful
+            if (isApiKeyValid) {
+              return@withContext true
+            }
 
-          if (response.code in 500..599) delay(RETRY_DELAY_MS)
-          else {
-            response.close()
-            return@withContext false
+            if (response.code in 500..599) delay(RETRY_DELAY_MS)
+            else {
+              return@withContext false
+            }
           }
         } catch (e: Exception) {
           e.printStackTrace()
