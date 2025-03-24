@@ -62,11 +62,7 @@ enum class SheetValue {
   ExperimentalLayoutApi::class,
 )
 @Composable
-fun BottomSheet(
-  viewModel: BottomSheetViewModel,
-  activity: ComponentActivity? = null,
-  finishAfter: Boolean? = false,
-) {
+fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = null) {
   val showBottomSheet by viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
   val transcription = viewModel.transcription.collectAsStateWithLifecycle().value
   val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
@@ -93,8 +89,8 @@ fun BottomSheet(
       SheetValue.Hidden -> {
         timerJob =
           coroutineScope.launch {
-            delay(5000)
-            Log.d("BottomSheetLog", "5 seconds have passed")
+            delay(2000)
+            Log.d("BottomSheetLog", "2 seconds have passed")
             viewModel.finishActivity()
           }
       }
@@ -119,6 +115,8 @@ fun BottomSheet(
 
   LaunchedEffect(shouldFinishActivity) {
     if (shouldFinishActivity && activity != null) {
+      viewModel.showToast(context, "Saved")
+      viewModel.onSaveClick()
       Log.d("BottomSheet", "shouldFinishActivity is true")
       Log.d("BottomSheet", "Finish Activity triggered after 2 seconds delay")
       activity.finish()

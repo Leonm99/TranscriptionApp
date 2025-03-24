@@ -64,7 +64,7 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
         isFormattingEnabled = userPreferences.formatSwitchState
         mockApi = userPreferences.mockApi
       }
-      if (checkApiKey()) {}
+      // if (checkApiKey()) {}
 
       Log.d("OpenAiHandler", "API Key Valid: " + checkApiKey())
     }
@@ -206,7 +206,7 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
     }
   }
 
-  suspend fun correctSpelling(userText: String): String {
+  fun correctSpelling(userText: String): String {
     val mediaTypeJson = "application/json".toMediaType()
     val requestBody =
       """
