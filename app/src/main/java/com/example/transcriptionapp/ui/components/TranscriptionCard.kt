@@ -1,5 +1,6 @@
 package com.example.transcriptionapp.ui.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -146,7 +147,8 @@ fun TranscriptionCard(
 
         HorizontalPager(
           state = pagerState,
-          modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 350.dp),
+          modifier =
+            Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 200.dp).animateContentSize(),
         ) { page ->
           val scrollState = rememberScrollState()
 
