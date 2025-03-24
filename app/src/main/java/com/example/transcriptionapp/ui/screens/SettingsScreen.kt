@@ -115,7 +115,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
 
   if (showDialog) {
     when (dialogType) {
-      DialogType.API -> ApiKeyDialog(viewModel)
+      DialogType.API -> ApiKeyDialog(viewModel, settings.userApiKey)
       DialogType.LANGUAGE -> LanguageDialog(viewModel, settings.selectedLanguage)
       DialogType.MODEL -> ModelDialog(viewModel, settings.selectedModel)
       DialogType.DELETE -> DeleteDialog(viewModel)
