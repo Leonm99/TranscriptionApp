@@ -1,7 +1,7 @@
 package com.example.transcriptionapp.api
 
-import kotlinx.coroutines.delay
 import java.io.File
+import kotlinx.coroutines.delay
 
 class MockOpenAiHandler() : OpenAiService {
 
@@ -10,19 +10,19 @@ class MockOpenAiHandler() : OpenAiService {
       "Quisque eu diam felis." +
       " Integer nec mauris a mauris suscipit tempus eget id lectus."
 
-  override suspend fun whisper(file: File): String {
+  override suspend fun whisper(file: File): Result<String> {
     delay(3000)
-    return text
+    return Result.success(text)
   }
 
-  override suspend fun summarize(userText: String): String {
+  override suspend fun summarize(userText: String): Result<String> {
     delay(3000)
-    return text.repeat(4)
+    return Result.success(text.repeat(4))
   }
 
-  override suspend fun translate(userText: String): String {
+  override suspend fun translate(userText: String): Result<String> {
     delay(3000)
-    return text.repeat(8)
+    return Result.success(text.repeat(8))
   }
 
   suspend fun correctSpelling(userText: String): String {

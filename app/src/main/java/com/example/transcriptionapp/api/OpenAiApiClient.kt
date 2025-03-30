@@ -1,5 +1,8 @@
 package com.example.transcriptionapp.api
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
 import com.example.transcriptionapp.model.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
@@ -11,6 +14,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.ConnectionPool
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -23,16 +27,18 @@ import javax.inject.Inject
 
 interface OpenAiService {
 
-  suspend fun whisper(audioFile: File): String
+  suspend fun whisper(audioFile: File): Result<String>
 
-  suspend fun summarize(text: String): String
+  suspend fun summarize(text: String): Result<String>
 
-  suspend fun translate(text: String): String
+  suspend fun translate(text: String): Result<String>
 
   suspend fun checkApiKey(): Boolean
 }
 
-class OpenAiHandler @Inject constructor(private val settingsRepository: SettingsRepository) :
+class OpenAiHandler
+@Inject
+constructor(private val settingsRepository: SettingsRepository, private val context: Context) :
   OpenAiService {
 
   private val json = Json { ignoreUnknownKeys = true }
@@ -46,12 +52,12 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
   private val MAX_RETRIES = 3
   private val RETRY_DELAY_MS = 1000L
 
-  // Configure OkHttpClient with increased timeouts
   private val client =
     OkHttpClient.Builder()
-      .connectTimeout(180, TimeUnit.SECONDS) // Increased connection timeout
-      .readTimeout(120, TimeUnit.SECONDS) // Increased read timeout
-      .writeTimeout(120, TimeUnit.SECONDS) // Increased write timeout
+      .connectTimeout(20, TimeUnit.SECONDS) // Example increase
+      .readTimeout(20, TimeUnit.SECONDS) // Example increase
+      .writeTimeout(20, TimeUnit.SECONDS) // Example increase
+      .connectionPool(ConnectionPool(5, 1, TimeUnit.MINUTES))
       .build()
 
   init {
@@ -70,8 +76,19 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
     }
   }
 
-  override suspend fun whisper(audioFile: File): String {
-    println("Create transcription...")
+  override suspend fun whisper(audioFile: File): Result<String> {
+    Log.e("OpenAiHandler", "Creating Transcription")
+
+    if (!isNetworkAvailable(context)) {
+      Log.e("OpenAiHandler", "No network connection available")
+      client.connectionPool.evictAll()
+      Log.d(
+        "OpenAiHandler",
+        "${client.connectionPool.idleConnectionCount()} idle connections AFTER EVICTION",
+      )
+      return Result.failure(Exception("No network connection available"))
+    }
+
     val mediaTypeAudio = "audio/mpeg".toMediaType()
     val requestBody =
       MultipartBody.Builder()
@@ -87,30 +104,45 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
         .post(requestBody)
         .build()
 
-    val useCorrection = isFormattingEnabled
     return try {
       client.newCall(request).execute().use { response ->
         if (!response.isSuccessful) {
-          println("Transcription failed: ${response.code} ${response.message}")
-          return "Transcription failed: ${response.code} ${response.message}"
+          Log.e("OpenAiHandler", "Transcription failed: ${response.code} ${response.message}")
+          return Result.failure(
+            Exception("Transcription failed: ${response.code} ${response.message}")
+          )
         }
         val responseBody = response.body?.string()
         val jsonResponse = json.parseToJsonElement(responseBody ?: "")
         val result = jsonResponse.jsonObject["text"]?.jsonPrimitive?.content ?: ""
 
-        if (useCorrection) {
-          correctSpelling(result)
+        if (isFormattingEnabled) {
+          Result.success(correctSpelling(result))
         } else {
-          result
+          Result.success(result)
         }
       }
     } catch (e: Exception) {
       Log.e("OpenAiHandler", "Error during transcription: ${e.message}", e)
-      return "Error during transcription: ${e.message}"
+      Result.failure(Exception("Error during transcription: ${e.message}"))
     }
   }
 
-  override suspend fun summarize(userText: String): String {
+  override suspend fun summarize(userText: String): Result<String> {
+
+    Log.d("OpenAiHandler", "Creating Summary with text: $userText")
+    Log.d("OpenAiHandler", "${client.connectionPool.idleConnectionCount()} idle connections")
+
+    if (!isNetworkAvailable(context)) {
+      Log.e("OpenAiHandler", "No network connection available")
+      client.connectionPool.evictAll()
+      Log.d(
+        "OpenAiHandler",
+        "${client.connectionPool.idleConnectionCount()} idle connections AFTER EVICTION",
+      )
+      return Result.failure(Exception("No network connection available"))
+    }
+
     val languagePrompt = "in ${language.uppercase()}"
     val mediaTypeJson = "application/json".toMediaType()
     val requestBody =
@@ -134,31 +166,68 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
         .build()
 
     return try {
-      client.newCall(request).execute().use { response ->
+      Log.d("OpenAiHandler", "Making summary request with text: $userText") // Log request start
+
+      val response = client.newCall(request).execute()
+
+      Log.d("OpenAiHandler", "Summary response received: ${response.code}") // Log response code
+      Log.d(
+        "OpenAiHandler",
+        "Summary response message: ${response.message}",
+      ) // Log response message
+
+      response.use {
         if (!response.isSuccessful) {
-          println("Summary failed: ${response.code} ${response.message}")
-          return "Summary failed: ${response.code} ${response.message}"
+          val errorMessage = "Summary failed: ${response.code} ${response.message}"
+          Log.e("OpenAiHandler", errorMessage)
+          return Result.failure(Exception(errorMessage))
         }
+
         val responseBody = response.body?.string()
+
+        Log.d(
+          "OpenAiHandler",
+          "Summary response body: $responseBody",
+        ) // Log the response body (be mindful of large responses)
+
         val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-        jsonResponse.jsonObject["choices"]
-          ?.jsonArray
-          ?.get(0)
-          ?.jsonObject
-          ?.get("message")
-          ?.jsonObject
-          ?.get("content")
-          ?.jsonPrimitive
-          ?.content
-          .orEmpty()
+        val result =
+          jsonResponse.jsonObject["choices"]
+            ?.jsonArray
+            ?.get(0)
+            ?.jsonObject
+            ?.get("message")
+            ?.jsonObject
+            ?.get("content")
+            ?.jsonPrimitive
+            ?.content
+            .orEmpty()
+
+        if (isFormattingEnabled) {
+          Result.success(correctSpelling(result))
+        } else {
+          Result.success(result)
+        }
       }
     } catch (e: Exception) {
       Log.e("OpenAiHandler", "Error during summary: ${e.message}", e)
-      return "Error during summary: ${e.message}"
+      Result.failure(Exception("Error during summary: ${e.message}"))
     }
   }
 
-  override suspend fun translate(userText: String): String {
+  override suspend fun translate(userText: String): Result<String> {
+    Log.d("OpenAiHandler", "Creating Translation")
+
+    if (!isNetworkAvailable(context)) {
+      Log.e("OpenAiHandler", "No network connection available")
+      client.connectionPool.evictAll()
+      Log.d(
+        "OpenAiHandler",
+        "${client.connectionPool.idleConnectionCount()} idle connections AFTER EVICTION",
+      )
+      return Result.failure(Exception("No network connection available"))
+    }
+
     val languagePrompt = "to ${language.uppercase()}"
     val mediaTypeJson = "application/json".toMediaType()
     val requestBody =
@@ -184,29 +253,44 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
     return try {
       client.newCall(request).execute().use { response ->
         if (!response.isSuccessful) {
-          println("Translation failed: ${response.code} ${response.message}")
-          return "Translation failed: ${response.code} ${response.message}"
+          Log.e("OpenAiHandler", "Translation failed: ${response.code} ${response.message}")
+          return Result.failure(
+            Exception("Translation failed: ${response.code} ${response.message}")
+          )
         }
         val responseBody = response.body?.string()
         val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-        jsonResponse.jsonObject["choices"]
-          ?.jsonArray
-          ?.get(0)
-          ?.jsonObject
-          ?.get("message")
-          ?.jsonObject
-          ?.get("content")
-          ?.jsonPrimitive
-          ?.content
-          .orEmpty()
+        val result =
+          jsonResponse.jsonObject["choices"]
+            ?.jsonArray
+            ?.get(0)
+            ?.jsonObject
+            ?.get("message")
+            ?.jsonObject
+            ?.get("content")
+            ?.jsonPrimitive
+            ?.content
+            .orEmpty()
+
+        if (isFormattingEnabled) {
+          Result.success(correctSpelling(result))
+        } else {
+          Result.success(result)
+        }
       }
     } catch (e: Exception) {
       Log.e("OpenAiHandler", "Error during translation: ${e.message}", e)
-      return "Error during translation: ${e.message}"
+      Result.failure(Exception("Error during translation: ${e.message}"))
     }
   }
 
   fun correctSpelling(userText: String): String {
+
+    if (!isNetworkAvailable(context)) {
+      Log.e("OpenAiHandler", "No network connection available")
+      return "No network connection available" // Or throw an exception
+    }
+
     val mediaTypeJson = "application/json".toMediaType()
     val requestBody =
       """
@@ -254,6 +338,12 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
   }
 
   override suspend fun checkApiKey(): Boolean {
+
+    if (!isNetworkAvailable(context)) {
+      Log.e("OpenAiHandler", "No network connection available")
+      return false
+    }
+
     if (apiKey.isBlank()) return false
     return withContext(Dispatchers.IO) {
       val request =
@@ -281,6 +371,21 @@ class OpenAiHandler @Inject constructor(private val settingsRepository: Settings
         }
       }
       return@withContext false
+    }
+  }
+
+  fun isNetworkAvailable(context: Context): Boolean {
+    val connectivityManager =
+      context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val network = connectivityManager.activeNetwork ?: return false
+    val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
+    return when {
+      activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+      activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+      activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+      else -> {
+        false
+      }
     }
   }
 }

@@ -1,6 +1,7 @@
 package com.example.transcriptionapp.ui.screens
 
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -43,7 +44,10 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
   val dialogType by viewModel.dialogType.collectAsStateWithLifecycle()
   val settings by viewModel.settings.collectAsStateWithLifecycle()
   val context = LocalContext.current
-  Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+  Column(
+    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    horizontalAlignment = Alignment.CenterHorizontally,
+  ) {
     TopAppBar(
       title = { Text("Settings") },
       navigationIcon = {

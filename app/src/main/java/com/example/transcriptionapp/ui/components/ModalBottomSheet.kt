@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Button
@@ -66,6 +67,7 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
   val showBottomSheet by viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
   val transcription = viewModel.transcription.collectAsStateWithLifecycle().value
   val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+  val errorText by viewModel.transcriptionError.collectAsStateWithLifecycle()
 
   val context = LocalContext.current
   val coroutineScope = rememberCoroutineScope()
@@ -90,7 +92,7 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
           coroutineScope.launch {
             delay(2000)
             Log.d("BottomSheetLog", "2 seconds have passed")
-            viewModel.showToast(context, "Saved")
+            viewModel.showToast("Saved")
             viewModel.onSaveClick()
             activity?.finish()
           }
@@ -151,6 +153,7 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
               false,
               false,
               {},
+              errorText,
             )
             HorizontalDivider(Modifier.padding(8.dp))
 
@@ -159,33 +162,49 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
               horizontalArrangement = Arrangement.SpaceEvenly,
               verticalAlignment = Alignment.CenterVertically,
             ) {
-              Button(
-                onClick = { viewModel.onSummarizeClick() },
-                modifier = Modifier,
-                shape = CircleShape,
-              ) {
-                Icon(
-                  Icons.AutoMirrored.Filled.Message,
-                  contentDescription = "Summarize",
+              if (errorText.isNullOrEmpty()) {
+                Button(
+                  onClick = { viewModel.onSummarizeClick() },
                   modifier = Modifier,
-                )
-              }
-              Button(
-                onClick = { viewModel.onTranslateClick() },
-                modifier = Modifier,
-                shape = CircleShape,
-              ) {
-                Icon(Icons.Filled.Translate, contentDescription = "Translate", modifier = Modifier)
-              }
-              Button(
-                onClick = {
-                  viewModel.showToast(context, "Saved")
-                  viewModel.onSaveClick()
-                },
-                modifier = Modifier,
-                shape = CircleShape,
-              ) {
-                Icon(Icons.Filled.Save, contentDescription = "Save", modifier = Modifier)
+                  shape = CircleShape,
+                ) {
+                  Icon(
+                    Icons.AutoMirrored.Filled.Message,
+                    contentDescription = "Summarize",
+                    modifier = Modifier,
+                  )
+                }
+                Button(
+                  onClick = { viewModel.onTranslateClick() },
+                  modifier = Modifier,
+                  shape = CircleShape,
+                ) {
+                  Icon(
+                    Icons.Filled.Translate,
+                    contentDescription = "Translate",
+                    modifier = Modifier,
+                  )
+                }
+                Button(
+                  onClick = {
+                    if (errorText.isNullOrEmpty()) {
+                      viewModel.showToast("Saved")
+                    }
+                    viewModel.onSaveClick()
+                  },
+                  modifier = Modifier,
+                  shape = CircleShape,
+                ) {
+                  Icon(Icons.Filled.Save, contentDescription = "Save", modifier = Modifier)
+                }
+              } else {
+                Button(
+                  onClick = { viewModel.onRetryClick() },
+                  modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
+                  shape = CircleShape,
+                ) {
+                  Icon(Icons.Default.Refresh, contentDescription = "Retry", modifier = Modifier)
+                }
               }
             }
 

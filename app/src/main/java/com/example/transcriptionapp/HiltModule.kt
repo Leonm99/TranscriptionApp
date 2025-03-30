@@ -85,8 +85,11 @@ object HiltModule {
 
   @Provides
   @Singleton
-  fun provideOpenAiHandler(settingsRepository: SettingsRepository): OpenAiHandler {
-    return OpenAiHandler(settingsRepository)
+  fun provideOpenAiHandler(
+    settingsRepository: SettingsRepository,
+    @ApplicationContext context: Context,
+  ): OpenAiHandler {
+    return OpenAiHandler(settingsRepository, context)
   }
 
   @Provides

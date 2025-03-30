@@ -147,7 +147,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
     }
 
     if (transcriptionList.isEmpty()) {
-      Box(modifier = Modifier.fillMaxSize()) {
+      Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Text(
           modifier = Modifier.align(Alignment.Center).fillMaxWidth().padding(16.dp),
           style = MaterialTheme.typography.headlineLarge,
@@ -157,7 +157,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         )
       }
     } else {
-      LazyColumn(modifier = Modifier) {
+      LazyColumn(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
         items(transcriptionList) { transcription ->
           val isSelected = selectedItems.contains(transcription.id)
           TranscriptionCard(
@@ -177,7 +177,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
               }
             },
             modifier =
-              Modifier.padding(start = 10.dp, end = 10.dp, top = 10.dp)
+              Modifier.padding(start = 4.dp, end = 4.dp, top = 9.dp)
                 .shadow(elevation = 5.dp, shape = RoundedCornerShape(12.dp)),
             // Increased horizontal and vertical padding
           )
