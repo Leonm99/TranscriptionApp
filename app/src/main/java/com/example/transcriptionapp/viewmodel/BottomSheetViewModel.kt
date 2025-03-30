@@ -19,10 +19,6 @@ import com.example.transcriptionapp.util.FileUtils
 import com.example.transcriptionapp.util.FileUtils.clearTempDir
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +26,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import javax.inject.Inject
 
 fun formatTimestamp(timestamp: Long): String {
   val date = Date(timestamp)
@@ -232,10 +232,9 @@ constructor(
 
   fun onSaveClick() {
     viewModelScope.launch {
-      if (_transcriptionError.value != null) {
-        showToast(_transcriptionError.value!!, true)
-      } else {
+      if (_transcriptionError.value.isNullOrEmpty()) {
         transcriptionRepository.upsertTranscription(_transcription.value)
+        showToast("Saved")
       }
 
       clearTranscription()

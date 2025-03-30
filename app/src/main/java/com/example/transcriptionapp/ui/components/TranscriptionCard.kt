@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.SignalCellularConnectedNoInternet0Bar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -110,15 +111,25 @@ fun TranscriptionCard(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
       ) {
-        Icon(
-          modifier = Modifier.size(50.dp),
-          imageVector = Icons.Filled.SignalCellularConnectedNoInternet0Bar,
-          contentDescription = "Copy",
-        )
+        if (errorMessage.contains("No network")) {
+          Icon(
+            modifier = Modifier.size(50.dp),
+            imageVector = Icons.Filled.SignalCellularConnectedNoInternet0Bar,
+            contentDescription = "Copy",
+          )
+        } else {
+          Icon(
+            modifier = Modifier.size(50.dp),
+            imageVector = Icons.Filled.ErrorOutline,
+            contentDescription = "Copy",
+          )
+        }
+
         Text(
           modifier = Modifier.padding(top = 10.dp),
           text = errorMessage,
           style = MaterialTheme.typography.bodyMedium,
+          textAlign = TextAlign.Center,
           color = MaterialTheme.colorScheme.error,
         )
       }

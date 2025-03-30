@@ -92,7 +92,6 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
           coroutineScope.launch {
             delay(2000)
             Log.d("BottomSheetLog", "2 seconds have passed")
-            viewModel.showToast("Saved")
             viewModel.onSaveClick()
             activity?.finish()
           }
@@ -186,12 +185,7 @@ fun BottomSheet(viewModel: BottomSheetViewModel, activity: ComponentActivity? = 
                   )
                 }
                 Button(
-                  onClick = {
-                    if (errorText.isNullOrEmpty()) {
-                      viewModel.showToast("Saved")
-                    }
-                    viewModel.onSaveClick()
-                  },
+                  onClick = { viewModel.onSaveClick() },
                   modifier = Modifier,
                   shape = CircleShape,
                 ) {

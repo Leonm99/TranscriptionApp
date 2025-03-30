@@ -79,13 +79,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
   override suspend fun whisper(audioFile: File): Result<String> {
     Log.e("OpenAiHandler", "Creating Transcription")
 
-    if (!isNetworkAvailable(context)) {
-      Log.e("OpenAiHandler", "No network connection available")
-      client.connectionPool.evictAll()
-      Log.d(
-        "OpenAiHandler",
-        "${client.connectionPool.idleConnectionCount()} idle connections AFTER EVICTION",
-      )
+    if (!isNetworkAvailable(context, client)) {
       return Result.failure(Exception("No network connection available"))
     }
 
@@ -107,9 +101,10 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
     return try {
       client.newCall(request).execute().use { response ->
         if (!response.isSuccessful) {
-          Log.e("OpenAiHandler", "Transcription failed: ${response.code} ${response.message}")
+          val message = parseResponseMessage(response.body?.string() ?: "")
+          Log.e("OpenAiHandler", "Transcription failed: Error Code:${response.code}\n$message")
           return Result.failure(
-            Exception("Transcription failed: ${response.code} ${response.message}")
+            Exception("Transcription failed: Error Code:${response.code}\n$message")
           )
         }
         val responseBody = response.body?.string()
@@ -133,13 +128,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
     Log.d("OpenAiHandler", "Creating Summary with text: $userText")
     Log.d("OpenAiHandler", "${client.connectionPool.idleConnectionCount()} idle connections")
 
-    if (!isNetworkAvailable(context)) {
-      Log.e("OpenAiHandler", "No network connection available")
-      client.connectionPool.evictAll()
-      Log.d(
-        "OpenAiHandler",
-        "${client.connectionPool.idleConnectionCount()} idle connections AFTER EVICTION",
-      )
+    if (!isNetworkAvailable(context, client)) {
       return Result.failure(Exception("No network connection available"))
     }
 
@@ -150,8 +139,8 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
             {
               "model": "$model",
               "messages": [
-                {"role": "system", "content": "You are a helpful assistant that summarizes text."},
-                {"role": "user", "content": "You will be provided with a transcription, and your task is to summarize it in $languagePrompt: $userText"}
+                {"role": "system", "content": "You are the most helpful assistant that ONLY summarizes text."},
+                {"role": "user", "content": "You will be provided with a transcription, and your task is to summarize it in $languagePrompt: $userText ,make it the best it can be my job depends on it!"}
               ]
             }
         """
@@ -218,13 +207,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
   override suspend fun translate(userText: String): Result<String> {
     Log.d("OpenAiHandler", "Creating Translation")
 
-    if (!isNetworkAvailable(context)) {
-      Log.e("OpenAiHandler", "No network connection available")
-      client.connectionPool.evictAll()
-      Log.d(
-        "OpenAiHandler",
-        "${client.connectionPool.idleConnectionCount()} idle connections AFTER EVICTION",
-      )
+    if (!isNetworkAvailable(context, client)) {
       return Result.failure(Exception("No network connection available"))
     }
 
@@ -235,8 +218,8 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
             {
               "model": "$model",
               "messages": [
-                {"role": "system", "content": "You are a helpful assistant that translates text."},
-                {"role": "user", "content": "You will be provided with a text, and your task is to translate it into $languagePrompt: $userText"}
+                {"role": "system", "content": "You are the most helpful assistant that ONLY translates text."},
+                {"role": "user", "content": "You will be provided with a text, and your task is to translate it into $languagePrompt: $userText ,make it the best it can be my job depends on it!"}
               ]
             }
         """
@@ -286,7 +269,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
 
   fun correctSpelling(userText: String): String {
 
-    if (!isNetworkAvailable(context)) {
+    if (!isNetworkAvailable(context, client)) {
       Log.e("OpenAiHandler", "No network connection available")
       return "No network connection available" // Or throw an exception
     }
@@ -339,7 +322,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
 
   override suspend fun checkApiKey(): Boolean {
 
-    if (!isNetworkAvailable(context)) {
+    if (!isNetworkAvailable(context, client)) {
       Log.e("OpenAiHandler", "No network connection available")
       return false
     }
@@ -374,7 +357,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
     }
   }
 
-  fun isNetworkAvailable(context: Context): Boolean {
+  fun isNetworkAvailable(context: Context, client: OkHttpClient): Boolean {
     val connectivityManager =
       context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val network = connectivityManager.activeNetwork ?: return false
@@ -384,8 +367,28 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
       activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
       activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
       else -> {
+        Log.e("OpenAiHandler", "No network connection available")
+        client.connectionPool.evictAll()
+        Log.d(
+          "OpenAiHandler",
+          "${client.connectionPool.idleConnectionCount()} idle connections AFTER EVICTION",
+        )
         false
       }
     }
+  }
+
+  fun parseResponseMessage(responseBodyString: String): String {
+    val errorJson =
+      try {
+        json.parseToJsonElement(responseBodyString).jsonObject
+      } catch (e: Exception) {
+        null // Handle cases where the body is not valid JSON
+      }
+    val message =
+      errorJson?.get("error")?.jsonObject?.get("message")?.jsonPrimitive?.content
+        ?: "Bad request. Please check your input."
+
+    return message ?: "Bad request. Please check your input."
   }
 }
