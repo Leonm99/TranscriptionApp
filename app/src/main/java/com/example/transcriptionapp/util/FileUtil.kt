@@ -3,8 +3,11 @@ package com.example.transcriptionapp.util
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.ReturnCode
 import java.io.File
 import java.io.FileOutputStream
+import java.util.UUID
 
 object FileUtils {
 
@@ -15,8 +18,9 @@ object FileUtils {
       tempDir.mkdirs()
     }
     return try {
+      val randomName = UUID.randomUUID().toString()
       context.contentResolver.openInputStream(uri)?.use { inputStream ->
-        val file = File(tempDir, "shared_audio_file.${getFileExtensionFromUri(context, uri)}")
+        val file = File(tempDir, "$randomName.${getFileExtensionFromUri(context, uri)}")
         FileOutputStream(file).use { outputStream -> inputStream.copyTo(outputStream) }
         Log.d("ReceiveIntentActivity", "File saved to cache: ${file.absolutePath}")
         file
@@ -68,16 +72,40 @@ object FileUtils {
     Log.d("TAG", "Cleared temp directory: ${tempDir.absolutePath}")
   }
 
-  //  fun convertAudio(inputUri: Uri, outputFormat: String, context: Context): Uri? {
-  //    return try {
-  //      val context = null
-  //      val outputPath = File(context.cacheDir, "output.$outputFormat").absolutePath
-  //      val result = FFmpeg.execute(arrayOf("-y", "-i", inputUri.path, "-c:a", outputFormat,
-  // outputPath))
-  //      if (result == 0) Uri.fromFile(File(outputPath)) else null
-  //    } catch (e: Exception) {
-  //      e.printStackTrace()
-  //      null
-  //    }
-  //  }
+  suspend fun convertToMP3(inputUri: Uri, context: Context): File? {
+    Log.d("FileUtil", "Input URI: ${inputUri.path}")
+    // Check if the input is already an MP3 file
+    val mimeType = context.contentResolver.getType(inputUri)
+    if (mimeType == "audio/mp3") {
+      return getFileFromUri(inputUri, context)
+    }
+
+    return try {
+      // Generate a random output name
+
+      // Define the output path using the random name
+      val outputPath =
+        File("${context.cacheDir}/temp", inputUri.lastPathSegment + ".mp3").absolutePath
+
+      // FFmpeg command to convert the audio file to MP3, optimized for Whisper transcription
+      val command = "-y -i ${inputUri.path} -ac 1 -ar 16000 -c:a libmp3lame -b:a 64k $outputPath"
+
+      // Execute the FFmpeg command using FFmpegKit
+      val session = FFmpegKit.execute(command)
+
+      // Check the return code of the execution
+      val returnCode = session.returnCode
+
+      // Check if the conversion was successful
+      if (ReturnCode.isSuccess(returnCode)) {
+        File(outputPath) // Return the file that gets created
+      } else {
+        Log.d("FileUtil", "Failed to convert file to MP3: $returnCode")
+        null // Return null if conversion failed
+      }
+    } catch (e: Exception) {
+      Log.d("FileUtil", "Error converting file to MP3", e)
+      null // Return null in case of an error
+    }
+  }
 }
