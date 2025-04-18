@@ -1,19 +1,22 @@
 [versions]
 advancedBottomsheetMaterial3 = "0.1.0"
-agp = "8.9.0"
+agp = "8.10.0-alpha08"
 datastorePreferences = "1.1.4"
+
+ffmpegKitFull = "6.0-2.LTS"
 hiltAndroid = "2.55"
 kotlinxSerializationJson = "1.7.3"
 kotlin = "2.1.10"
-coreKtx = "1.15.0"
+coreKtx = "1.16.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 ktorClientAndroid = "3.0.3"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.1"
-composeBom = "2025.03.01"
+composeBom = "2025.04.00"
 material = "1.12.0"
+
 navigationCompose = "2.8.9"
 retrofit = "2.11.0"
 ksp = "2.1.10-1.0.29"
@@ -25,7 +28,7 @@ logging-interceptor = "4.11.0"
 compose-settings = "2.6.0"
 lifecycleViewmodelCompose = "2.8.7"
 materialIconsExtendedVersion = "1.7.8"
-roomKtx = "2.7.0-rc03"
+roomKtx = "2.7.0"
 
 
 [libraries]
@@ -34,6 +37,8 @@ advanced-bottomsheet-material3 = { module = "io.morfly.compose:advanced-bottomsh
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomKtx" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
+
+ffmpeg-kit-full = { module = "com.arthenica:ffmpeg-kit-full", version.ref = "ffmpegKitFull" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroid" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
@@ -55,6 +60,7 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 convert-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converter-gson" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
