@@ -96,6 +96,7 @@ class ShareActivity : ComponentActivity() {
       when {
         intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true -> {
           handleAudioOrVideoIntent(intent)
+          bottomSheetViewModel.transcribeAudios()
           bottomSheetViewModel.showBottomSheet()
         }
 
@@ -104,16 +105,40 @@ class ShareActivity : ComponentActivity() {
         }
       }
     }
+    if (intent?.action == Intent.ACTION_SEND_MULTIPLE) {
+      if (intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true) {
+        handleAudioOrVideoIntent(intent)
+        bottomSheetViewModel.transcribeAudios()
+        bottomSheetViewModel.showBottomSheet()
+      }
+    }
   }
 
   private fun handleAudioOrVideoIntent(intent: Intent) {
-    val uri = getUriFromIntent(intent)
-    val audioFile = FileUtils.saveFileToCache(this, uri)
-    audioFile?.let { file ->
-      Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
-      // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
+    val clipData = intent.clipData
 
-      bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
+    // Check if there are multiple URIs
+    if (clipData != null) {
+      for (i in 0 until clipData.itemCount) {
+        val item = clipData.getItemAt(i)
+        val uri = item.uri
+        val audioFile = FileUtils.saveFileToCache(this, uri)
+        audioFile?.let { file ->
+          Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
+          // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
+
+          bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
+        }
+      }
+    } else {
+      val uri = getUriFromIntent(intent)
+      val audioFile = FileUtils.saveFileToCache(this, uri)
+      audioFile?.let { file ->
+        Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
+        // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
+
+        bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
+      }
     }
   }
 

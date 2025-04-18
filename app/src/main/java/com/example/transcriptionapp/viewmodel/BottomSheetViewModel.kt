@@ -15,12 +15,11 @@ import com.example.transcriptionapp.api.OpenAiServiceFactory
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.model.SettingsRepository
-import com.example.transcriptionapp.util.FileUtils
 import com.example.transcriptionapp.util.FileUtils.clearTempDir
+import com.example.transcriptionapp.util.FileUtils.convertToMP3
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,6 +88,8 @@ constructor(
 
   private var cachedAudioUri: Uri? = null
 
+  private var audioUris = mutableStateListOf<Uri>()
+
   fun hideBottomSheet() {
     _isBottomSheetVisible.value = false
   }
@@ -113,6 +114,13 @@ constructor(
   }
 
   fun onAudioSelected(audioUri: Uri, context: Context) {
+    audioUris += audioUri
+  }
+
+  fun transcribeAudios() {
+    if (audioUris.isEmpty()) {
+      return
+    }
 
     viewModelScope.launch {
       _lastAction.value = LastAction.TRANSCRIPTION
@@ -124,37 +132,48 @@ constructor(
 
       try {
 
-        cachedAudioUri = audioUri
-        withContext(Dispatchers.IO) {
-          val audioFile = FileUtils.getFileFromUri(audioUri, context)
+        val audioFiles =
+          audioUris.map { uri -> withContext(Dispatchers.IO) { convertToMP3(uri, context) } }
 
-          val transcriptionResult = openAiService.whisper(audioFile!!)
-
-          Log.d(TAG, "Transcribing audio...")
-
-          transcriptionResult
-            .onSuccess { text ->
-              _transcription.value =
-                _transcription.value.copy(
-                  transcriptionText = text,
-                  timestamp = formatTimestamp(System.currentTimeMillis()),
-                )
-              clearTempDir(context)
-              cachedAudioUri = null
-            }
-            .onFailure { e ->
-              _transcriptionError.value = e.message ?: "Unknown transcription error"
-              Log.e(TAG, "Transcription failed: ${e.message}", e)
-            }
-
-          withContext(Dispatchers.Main) {
-            _isLoading.value = false
-            showBottomSheet()
+        val transcriptionResults =
+          audioFiles.map { audioFile ->
+            withContext(Dispatchers.IO) { openAiService.whisper(audioFile!!) }
           }
+
+        Log.d(TAG, "Transcribing ${audioUris.size} audios...")
+        ""
+
+        val successfulResults =
+          transcriptionResults.mapIndexedNotNull { index, result ->
+            if (transcriptionResults.size < 2) {
+              result.getOrNull()
+            } else {
+              "Transcription ${index + 1}: " + result.getOrNull()
+            }
+          }
+
+        if (successfulResults.isNotEmpty()) {
+          _transcription.value =
+            _transcription.value.copy(
+              transcriptionText = successfulResults.joinToString("\n\n"),
+              timestamp = formatTimestamp(System.currentTimeMillis()),
+            )
+          clearTempDir(context)
+          audioUris.clear()
+        } else {
+          _transcriptionError.value =
+            transcriptionResults.firstOrNull { it.isFailure }?.exceptionOrNull()?.message
+              ?: "Unknown transcription error"
+          Log.e(TAG, "Transcription failed: ${_transcriptionError.value}")
+        }
+
+        withContext(Dispatchers.Main) {
+          _isLoading.value = false
+          showBottomSheet()
         }
       } catch (e: Exception) {
         // Handle error, e.g., update UI with error message
-        Log.e(TAG, "Error transcribing audio", e)
+        Log.e(TAG, "Error transcribing audios", e)
         _isLoading.value = false
 
         // ...
@@ -167,6 +186,7 @@ constructor(
       Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
         type = "audio/*"
         addCategory(Intent.CATEGORY_OPENABLE)
+        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Allow multiple selections
       }
     launcher.launch(intent)
   }
@@ -180,7 +200,6 @@ constructor(
 
         val summaryResult =
           withContext(Dispatchers.IO) {
-            delay(2000)
             openAiService.summarize(transcription.value.transcriptionText)
           }
 

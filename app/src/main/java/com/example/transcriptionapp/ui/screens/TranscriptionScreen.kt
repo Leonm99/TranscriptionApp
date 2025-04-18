@@ -1,6 +1,8 @@
 package com.example.transcriptionapp.ui.screens
 
 import android.app.Activity
+import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -55,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.transcriptionapp.R
 import com.example.transcriptionapp.ui.components.BottomSheet
 import com.example.transcriptionapp.ui.components.TranscriptionCard
+import com.example.transcriptionapp.util.FileUtils.saveFileToCache
 import com.example.transcriptionapp.util.copyToClipboard
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 
@@ -74,7 +77,29 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
       contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
       if (result.resultCode == Activity.RESULT_OK) {
-        result.data?.data?.let { uri -> viewModel.onAudioSelected(uri, activity) }
+        // Check if multiple items were selected
+        result.data?.let { data ->
+          if (data.clipData != null) {
+            // Multiple items selected
+            val itemCount = data.clipData!!.itemCount
+            for (i in 0 until itemCount) {
+              val uri = data.clipData!!.getItemAt(i).uri
+              Log.d("TranscriptionScreen", "Selected item Uri Path $i: ${uri.path}")
+              val tempfile = saveFileToCache(activity, uri)
+              val tempuri = Uri.fromFile(tempfile)
+              viewModel.onAudioSelected(tempuri, activity)
+            }
+          } else {
+            // Single item selected
+            data.data?.let { uri ->
+              Log.d("TranscriptionScreen", "Uri Path ${uri.path}")
+              val tempfile = saveFileToCache(activity, uri)
+              val tempuri = Uri.fromFile(tempfile)
+              viewModel.onAudioSelected(tempuri, activity)
+            }
+          }
+        }
+        viewModel.transcribeAudios()
       }
     }
 

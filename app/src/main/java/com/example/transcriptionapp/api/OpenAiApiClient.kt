@@ -124,7 +124,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
   }
 
   override suspend fun summarize(userText: String): Result<String> {
-
+    val truncatedText = userText.replace("\n", " ")
     Log.d("OpenAiHandler", "Creating Summary with text: $userText")
     Log.d("OpenAiHandler", "${client.connectionPool.idleConnectionCount()} idle connections")
 
@@ -140,7 +140,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
               "model": "$model",
               "messages": [
                 {"role": "system", "content": "You are the most helpful assistant that ONLY summarizes text."},
-                {"role": "user", "content": "You will be provided with a transcription, and your task is to summarize it in $languagePrompt: $userText ,make it the best it can be my job depends on it!"}
+                {"role": "user", "content": "You will be provided with a transcription, and your task is to summarize it in $languagePrompt: $truncatedText ,make it the best it can be my job depends on it!"}
               ]
             }
         """
@@ -157,29 +157,24 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
     return try {
       Log.d("OpenAiHandler", "Making summary request with text: $userText") // Log request start
 
-      val response = client.newCall(request).execute()
+      client.newCall(request).execute().use { response ->
+        val responseBody = response.body?.string()
+        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
 
-      Log.d("OpenAiHandler", "Summary response received: ${response.code}") // Log response code
-      Log.d(
-        "OpenAiHandler",
-        "Summary response message: ${response.message}",
-      ) // Log response message
-
-      response.use {
+        val responsemessage =
+          jsonResponse.jsonObject["error"]
+            ?.jsonObject
+            ?.get("message")
+            ?.jsonPrimitive
+            ?.content
+            .orEmpty()
+        Log.d("OpenAiHandler", "Response message: $responsemessage")
         if (!response.isSuccessful) {
-          val errorMessage = "Summary failed: ${response.code} ${response.message}"
+          val errorMessage = "Summary failed: ${response.code}\\n$responsemessage\""
           Log.e("OpenAiHandler", errorMessage)
           return Result.failure(Exception(errorMessage))
         }
 
-        val responseBody = response.body?.string()
-
-        Log.d(
-          "OpenAiHandler",
-          "Summary response body: $responseBody",
-        ) // Log the response body (be mindful of large responses)
-
-        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
         val result =
           jsonResponse.jsonObject["choices"]
             ?.jsonArray
@@ -205,6 +200,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
   }
 
   override suspend fun translate(userText: String): Result<String> {
+    val truncatedText = userText.replace("\n", " ")
     Log.d("OpenAiHandler", "Creating Translation")
 
     if (!isNetworkAvailable(context, client)) {
@@ -219,7 +215,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
               "model": "$model",
               "messages": [
                 {"role": "system", "content": "You are the most helpful assistant that ONLY translates text."},
-                {"role": "user", "content": "You will be provided with a text, and your task is to translate it into $languagePrompt: $userText ,make it the best it can be my job depends on it!"}
+                {"role": "user", "content": "You will be provided with a text, and your task is to translate it into $languagePrompt: $truncatedText ,make it the best it can be my job depends on it!"}
               ]
             }
         """
@@ -234,15 +230,26 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
         .build()
 
     return try {
+
       client.newCall(request).execute().use { response ->
+        val responseBody = response.body?.string()
+        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
+
+        val responsemessage =
+          jsonResponse.jsonObject["error"]
+            ?.jsonObject
+            ?.get("message")
+            ?.jsonPrimitive
+            ?.content
+            .orEmpty()
+        Log.d("OpenAiHandler", "Response message: $responsemessage")
+
         if (!response.isSuccessful) {
-          Log.e("OpenAiHandler", "Translation failed: ${response.code} ${response.message}")
+          Log.e("OpenAiHandler", "Translation failed: ${response.code}\n$responsemessage")
           return Result.failure(
             Exception("Translation failed: ${response.code} ${response.message}")
           )
         }
-        val responseBody = response.body?.string()
-        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
         val result =
           jsonResponse.jsonObject["choices"]
             ?.jsonArray

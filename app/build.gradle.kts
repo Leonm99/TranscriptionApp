@@ -75,6 +75,8 @@ dependencies {
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
 
+  implementation(libs.ffmpeg.kit.full)
+
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)
