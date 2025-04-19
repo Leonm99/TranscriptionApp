@@ -1,6 +1,5 @@
 package com.example.transcriptionapp.ui.components
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -151,12 +150,12 @@ fun TranscriptionCard(
               modifier = Modifier.wrapContentSize().offset(y = 6.dp),
               horizontalAlignment = Alignment.Start,
             ) {
-              Text(text = titleText, style = MaterialTheme.typography.titleMedium)
+              Text(text = titleText, style = MaterialTheme.typography.titleLarge)
 
               Text(
                 modifier = Modifier.padding(bottom = 8.dp),
                 text = transcription.timestamp,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.outline,
               )
             }
@@ -182,7 +181,7 @@ fun TranscriptionCard(
                 Icon(
                   Icons.Filled.ContentCopy,
                   contentDescription = "Copy",
-                  modifier = Modifier.size(20.dp),
+                  modifier = Modifier.size(24.dp),
                 )
               }
             }
@@ -190,8 +189,7 @@ fun TranscriptionCard(
 
           HorizontalPager(
             state = pagerState,
-            modifier =
-              Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 200.dp).animateContentSize(),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 200.dp),
           ) { page ->
             val scrollState = rememberScrollState()
 
@@ -207,7 +205,7 @@ fun TranscriptionCard(
                       .padding(top = 8.dp),
                   text = transcription.transcriptionText,
                   textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
+                  style = MaterialTheme.typography.bodyLarge,
                 )
               } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
                 Text(
@@ -220,7 +218,7 @@ fun TranscriptionCard(
                       .padding(top = 8.dp),
                   text = transcription.summaryText,
                   textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
+                  style = MaterialTheme.typography.bodyLarge,
                 )
               } else if (
                 page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
@@ -238,7 +236,7 @@ fun TranscriptionCard(
                       .padding(top = 8.dp),
                   text = transcription.translationText,
                   textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
+                  style = MaterialTheme.typography.bodyLarge,
                 )
               }
             }

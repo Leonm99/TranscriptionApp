@@ -5,6 +5,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
 import com.example.transcriptionapp.model.SettingsRepository
+import java.io.File
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -21,9 +24,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 
 interface OpenAiService {
 
@@ -77,7 +77,7 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
   }
 
   override suspend fun whisper(audioFile: File): Result<String> {
-    Log.e("OpenAiHandler", "Creating Transcription")
+    Log.d("OpenAiHandler", "Creating Transcription")
 
     if (!isNetworkAvailable(context, client)) {
       return Result.failure(Exception("No network connection available"))
@@ -98,181 +98,155 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
         .post(requestBody)
         .build()
 
-    return try {
-      client.newCall(request).execute().use { response ->
-        if (!response.isSuccessful) {
-          val message = parseResponseMessage(response.body?.string() ?: "")
-          Log.e("OpenAiHandler", "Transcription failed: Error Code:${response.code}\n$message")
-          return Result.failure(
-            Exception("Transcription failed: Error Code:${response.code}\n$message")
-          )
-        }
-        val responseBody = response.body?.string()
-        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-        val result = jsonResponse.jsonObject["text"]?.jsonPrimitive?.content ?: ""
+    return withContext(Dispatchers.IO) {
+      try {
+        client.newCall(request).execute().use { response ->
+          val responseBody = response.body?.string()
 
-        if (isFormattingEnabled) {
-          Result.success(correctSpelling(result))
-        } else {
-          Result.success(result)
+          if (!response.isSuccessful) {
+            val message = parseResponseMessage(response.body?.string() ?: "")
+            Log.e("OpenAiHandler", "Transcription failed: Error Code:${response.code}\n$message")
+            return@withContext Result.failure(
+              Exception("Transcription failed: Error Code:${response.code}\n$message")
+            )
+          }
+
+          val jsonResponse = json.parseToJsonElement(responseBody ?: "")
+          val result = jsonResponse.jsonObject["text"]?.jsonPrimitive?.content.orEmpty()
+
+          Result.success(if (isFormattingEnabled) correctSpelling(result) else result)
         }
+      } catch (e: Exception) {
+        Log.e("OpenAiHandler", "Error during transcription: ${e.message}", e)
+        Result.failure(Exception("Error during transcription: ${e.message}"))
       }
-    } catch (e: Exception) {
-      Log.e("OpenAiHandler", "Error during transcription: ${e.message}", e)
-      Result.failure(Exception("Error during transcription: ${e.message}"))
     }
   }
 
-  override suspend fun summarize(userText: String): Result<String> {
-    val truncatedText = userText.replace("\n", " ")
-    Log.d("OpenAiHandler", "Creating Summary with text: $userText")
-    Log.d("OpenAiHandler", "${client.connectionPool.idleConnectionCount()} idle connections")
+  override suspend fun summarize(userText: String): Result<String> =
+    withContext(Dispatchers.IO) {
+      if (!isNetworkAvailable(context, client)) {
+        return@withContext Result.failure(Exception("No network connection available"))
+      }
 
-    if (!isNetworkAvailable(context, client)) {
-      return Result.failure(Exception("No network connection available"))
-    }
-
-    val languagePrompt = "in ${language.uppercase()}"
-    val mediaTypeJson = "application/json".toMediaType()
-    val requestBody =
-      """
+      val languagePrompt = "in ${language.uppercase()}"
+      val requestBody =
+        """
             {
               "model": "$model",
               "messages": [
                 {"role": "system", "content": "You are the most helpful assistant that ONLY summarizes text."},
-                {"role": "user", "content": "You will be provided with a transcription, and your task is to summarize it in $languagePrompt: $truncatedText ,make it the best it can be my job depends on it!"}
+                {"role": "user", "content": "You will be provided with a transcription, and your task is to summarize it in $languagePrompt: $userText ,make it the best it can be my job depends on it!"}
               ]
             }
         """
-        .trimIndent()
-        .toRequestBody(mediaTypeJson)
+          .trimIndent()
+          .toRequestBody("application/json".toMediaType())
 
-    val request =
-      Request.Builder()
-        .url("https://api.openai.com/v1/chat/completions")
-        .header("Authorization", "Bearer $apiKey")
-        .post(requestBody)
-        .build()
+      client
+        .newCall(
+          Request.Builder()
+            .url("https://api.openai.com/v1/chat/completions")
+            .header("Authorization", "Bearer $apiKey")
+            .post(requestBody)
+            .build()
+        )
+        .execute()
+        .use { response ->
+          val responseBody = response.body?.string()
+          val result =
+            json
+              .parseToJsonElement(responseBody ?: "")
+              .jsonObject["choices"]
+              ?.jsonArray
+              ?.get(0)
+              ?.jsonObject
+              ?.get("message")
+              ?.jsonObject
+              ?.get("content")
+              ?.jsonPrimitive
+              ?.content
+              .orEmpty()
 
-    return try {
-      Log.d("OpenAiHandler", "Making summary request with text: $userText") // Log request start
-
-      client.newCall(request).execute().use { response ->
-        val responseBody = response.body?.string()
-        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-
-        val responsemessage =
-          jsonResponse.jsonObject["error"]
-            ?.jsonObject
-            ?.get("message")
-            ?.jsonPrimitive
-            ?.content
-            .orEmpty()
-        Log.d("OpenAiHandler", "Response message: $responsemessage")
-        if (!response.isSuccessful) {
-          val errorMessage = "Summary failed: ${response.code}\\n$responsemessage\""
-          Log.e("OpenAiHandler", errorMessage)
-          return Result.failure(Exception(errorMessage))
+          if (response.isSuccessful) {
+            if (isFormattingEnabled) {
+              Result.success(correctSpelling(result))
+            } else {
+              Result.success(result)
+            }
+          } else {
+            val message = parseResponseMessage(response.body?.string() ?: "")
+            Log.e("OpenAiHandler", "Summary failed: Error Code:${response.code}\n$message")
+            return@withContext Result.failure(
+              Exception("Summary failed: Error Code:${response.code}\n$message")
+            )
+          }
         }
+    }
 
-        val result =
-          jsonResponse.jsonObject["choices"]
-            ?.jsonArray
-            ?.get(0)
-            ?.jsonObject
-            ?.get("message")
-            ?.jsonObject
-            ?.get("content")
-            ?.jsonPrimitive
-            ?.content
-            .orEmpty()
+  override suspend fun translate(userText: String): Result<String> =
+    withContext(Dispatchers.IO) {
+      userText.replace("\n", " ")
+      Log.d("OpenAiHandler", "Creating Translation")
 
-        if (isFormattingEnabled) {
-          Result.success(correctSpelling(result))
-        } else {
-          Result.success(result)
-        }
+      if (!isNetworkAvailable(context, client)) {
+        return@withContext Result.failure(Exception("No network connection available"))
       }
-    } catch (e: Exception) {
-      Log.e("OpenAiHandler", "Error during summary: ${e.message}", e)
-      Result.failure(Exception("Error during summary: ${e.message}"))
-    }
-  }
 
-  override suspend fun translate(userText: String): Result<String> {
-    val truncatedText = userText.replace("\n", " ")
-    Log.d("OpenAiHandler", "Creating Translation")
-
-    if (!isNetworkAvailable(context, client)) {
-      return Result.failure(Exception("No network connection available"))
-    }
-
-    val languagePrompt = "to ${language.uppercase()}"
-    val mediaTypeJson = "application/json".toMediaType()
-    val requestBody =
-      """
+      val languagePrompt = "to ${language.uppercase()}"
+      val requestBody =
+        """
             {
               "model": "$model",
               "messages": [
                 {"role": "system", "content": "You are the most helpful assistant that ONLY translates text."},
-                {"role": "user", "content": "You will be provided with a text, and your task is to translate it into $languagePrompt: $truncatedText ,make it the best it can be my job depends on it!"}
+                {"role": "user", "content": "You will be provided with a text, and your task is to translate it into $languagePrompt: $userText ,make it the best it can be my job depends on it!"}
               ]
             }
         """
-        .trimIndent()
-        .toRequestBody(mediaTypeJson)
+          .trimIndent()
+          .toRequestBody("application/json".toMediaType())
 
-    val request =
-      Request.Builder()
-        .url("https://api.openai.com/v1/chat/completions")
-        .header("Authorization", "Bearer $apiKey")
-        .post(requestBody)
-        .build()
+      client
+        .newCall(
+          Request.Builder()
+            .url("https://api.openai.com/v1/chat/completions")
+            .header("Authorization", "Bearer $apiKey")
+            .post(requestBody)
+            .build()
+        )
+        .execute()
+        .use { response ->
+          val responseBody = response.body?.string()
+          val result =
+            json
+              .parseToJsonElement(responseBody ?: "")
+              .jsonObject["choices"]
+              ?.jsonArray
+              ?.get(0)
+              ?.jsonObject
+              ?.get("message")
+              ?.jsonObject
+              ?.get("content")
+              ?.jsonPrimitive
+              ?.content
+              .orEmpty()
 
-    return try {
-
-      client.newCall(request).execute().use { response ->
-        val responseBody = response.body?.string()
-        val jsonResponse = json.parseToJsonElement(responseBody ?: "")
-
-        val responsemessage =
-          jsonResponse.jsonObject["error"]
-            ?.jsonObject
-            ?.get("message")
-            ?.jsonPrimitive
-            ?.content
-            .orEmpty()
-        Log.d("OpenAiHandler", "Response message: $responsemessage")
-
-        if (!response.isSuccessful) {
-          Log.e("OpenAiHandler", "Translation failed: ${response.code}\n$responsemessage")
-          return Result.failure(
-            Exception("Translation failed: ${response.code} ${response.message}")
-          )
+          if (response.isSuccessful) {
+            if (isFormattingEnabled) {
+              Result.success(correctSpelling(result))
+            } else {
+              Result.success(result)
+            }
+          } else {
+            val message = parseResponseMessage(response.body?.string() ?: "")
+            Log.e("OpenAiHandler", "Translation failed: Error Code:${response.code}\n$message")
+            return@withContext Result.failure(
+              Exception("Translation failed: Error Code:${response.code}\n$message")
+            )
+          }
         }
-        val result =
-          jsonResponse.jsonObject["choices"]
-            ?.jsonArray
-            ?.get(0)
-            ?.jsonObject
-            ?.get("message")
-            ?.jsonObject
-            ?.get("content")
-            ?.jsonPrimitive
-            ?.content
-            .orEmpty()
-
-        if (isFormattingEnabled) {
-          Result.success(correctSpelling(result))
-        } else {
-          Result.success(result)
-        }
-      }
-    } catch (e: Exception) {
-      Log.e("OpenAiHandler", "Error during translation: ${e.message}", e)
-      Result.failure(Exception("Error during translation: ${e.message}"))
     }
-  }
 
   fun correctSpelling(userText: String): String {
 

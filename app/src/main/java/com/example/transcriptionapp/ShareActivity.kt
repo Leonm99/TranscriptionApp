@@ -11,10 +11,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.core.graphics.drawable.toDrawable
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.transcriptionapp.ui.components.BottomSheet
+import com.example.transcriptionapp.ui.components.ScrollableWithFixedPartsModalSheet
 import com.example.transcriptionapp.ui.theme.TranscriptionAppTheme
 import com.example.transcriptionapp.util.FileUtils
 import com.example.transcriptionapp.util.matchUrlFromSharedText
@@ -25,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlin.system.exitProcess
 
 private const val TAG = "ShareActivity"
 
@@ -61,7 +63,7 @@ class ShareActivity : ComponentActivity() {
             // Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black)
             //              )
             //            }
-            BottomSheet(bottomSheetViewModel, this@ShareActivity)
+            ScrollableWithFixedPartsModalSheet(bottomSheetViewModel)
           }
         }
       }
@@ -71,6 +73,17 @@ class ShareActivity : ComponentActivity() {
       CoroutineScope(Dispatchers.IO).launch {
         delay(1000)
         handleIntent(intent)
+      }
+    }
+
+    lifecycleScope.launch {
+      bottomSheetViewModel.closeApp.collect { shouldClose ->
+        if (shouldClose) {
+          Log.d(TAG, "closeApp: WE GET HERE FAM, WELL AT LEAST I HOPE SO")
+          finishAffinity() // Close the app
+          exitProcess(0)
+          Log.d(TAG, "JUST A LIL TEST")
+        }
       }
     }
   }
@@ -97,7 +110,7 @@ class ShareActivity : ComponentActivity() {
         intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true -> {
           handleAudioOrVideoIntent(intent)
           bottomSheetViewModel.transcribeAudios()
-          bottomSheetViewModel.showBottomSheet()
+          bottomSheetViewModel.toggleBottomSheet(true, true)
         }
 
         intent.type?.startsWith("text/") == true -> {
@@ -109,7 +122,7 @@ class ShareActivity : ComponentActivity() {
       if (intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true) {
         handleAudioOrVideoIntent(intent)
         bottomSheetViewModel.transcribeAudios()
-        bottomSheetViewModel.showBottomSheet()
+        bottomSheetViewModel.toggleBottomSheet(true, true)
       }
     }
   }

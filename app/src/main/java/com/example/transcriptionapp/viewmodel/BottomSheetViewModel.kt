@@ -86,16 +86,21 @@ constructor(
   private val _lastAction = MutableStateFlow(LastAction.NONE)
   val lastAction: StateFlow<LastAction> = _lastAction.asStateFlow()
 
+  private val _closeApp = MutableStateFlow(false)
+  val closeApp: StateFlow<Boolean>
+    get() = _closeApp
+
+  private var endAfterSave = false
+
   private var cachedAudioUri: Uri? = null
 
   private var audioUris = mutableStateListOf<Uri>()
 
-  fun hideBottomSheet() {
-    _isBottomSheetVisible.value = false
-  }
-
-  fun showBottomSheet() {
-    _isBottomSheetVisible.value = true
+  fun toggleBottomSheet(toggle: Boolean, isOverlay: Boolean = false) {
+    _isBottomSheetVisible.value = toggle
+    if (isOverlay) {
+      endAfterSave = true
+    }
   }
 
   init {
@@ -125,7 +130,7 @@ constructor(
     viewModelScope.launch {
       _lastAction.value = LastAction.TRANSCRIPTION
       withContext(Dispatchers.Main) {
-        showBottomSheet()
+        toggleBottomSheet(true)
         _isLoading.value = true
         _transcriptionError.value = null
       }
@@ -169,7 +174,7 @@ constructor(
 
         withContext(Dispatchers.Main) {
           _isLoading.value = false
-          showBottomSheet()
+          toggleBottomSheet(true)
         }
       } catch (e: Exception) {
         // Handle error, e.g., update UI with error message
@@ -257,7 +262,11 @@ constructor(
       }
 
       clearTranscription()
-      hideBottomSheet()
+      toggleBottomSheet(false)
+      if (endAfterSave) {
+        Log.d(TAG, "endAfterSave: WE GET HERE FAM")
+        _closeApp.value = true
+      }
     }
   }
 
