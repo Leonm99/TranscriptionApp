@@ -53,6 +53,7 @@ dependencies {
   implementation(libs.materialIconsExtended)
   implementation(libs.material)
   implementation(libs.advanced.bottomsheet.material3)
+  implementation(libs.androidx.ui.text.google.fonts)
 
   implementation(libs.retrofit)
   implementation(libs.convert.gson)
