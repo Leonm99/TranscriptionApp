@@ -11,7 +11,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,20 +22,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Addchart
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Transcribe
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -55,7 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.transcriptionapp.R
-import com.example.transcriptionapp.ui.components.BottomSheet
+import com.example.transcriptionapp.ui.components.ScrollableWithFixedPartsModalSheet
 import com.example.transcriptionapp.ui.components.TranscriptionCard
 import com.example.transcriptionapp.util.FileUtils.saveFileToCache
 import com.example.transcriptionapp.util.copyToClipboard
@@ -182,7 +182,10 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         )
       }
     } else {
-      LazyColumn(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+      LazyColumn(
+        modifier =
+          Modifier.background(MaterialTheme.colorScheme.background).padding(horizontal = 4.dp)
+      ) {
         items(transcriptionList) { transcription ->
           val isSelected = selectedItems.contains(transcription.id)
           TranscriptionCard(
@@ -211,20 +214,22 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
     }
   }
   Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars)) {
-    Row(Modifier.padding(vertical = 20.dp, horizontal = 30.dp).align(Alignment.BottomEnd)) {
-      FloatingActionButton(
+    Column(Modifier.padding(vertical = 20.dp, horizontal = 30.dp).align(Alignment.BottomEnd)) {
+      SmallFloatingActionButton(
         elevation = FloatingActionButtonDefaults.elevation(),
         onClick = { viewModel.onSampleClick() },
-        modifier = Modifier.padding(end = 10.dp),
+        modifier = Modifier.align(Alignment.End).padding(bottom = 4.dp),
       ) {
         Icon(imageVector = Icons.Filled.Addchart, contentDescription = "Add Sample Data")
       }
-      FloatingActionButton(
+      ExtendedFloatingActionButton(
         elevation = FloatingActionButtonDefaults.elevation(),
         onClick = { viewModel.buttonOnClick(launcher) },
-      ) {
-        Icon(imageVector = Icons.Filled.Add, contentDescription = "Transcribe File")
-      }
+        icon = {
+          Icon(imageVector = Icons.Filled.Transcribe, contentDescription = "Transcribe File")
+        },
+        text = { Text(text = "Transcribe") },
+      )
     }
   }
 
@@ -232,7 +237,5 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
     Box(modifier = Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black))
   }
 
-  if (isBottomSheetVisible) {
-    BottomSheet(viewModel)
-  }
+  ScrollableWithFixedPartsModalSheet(viewModel)
 }
