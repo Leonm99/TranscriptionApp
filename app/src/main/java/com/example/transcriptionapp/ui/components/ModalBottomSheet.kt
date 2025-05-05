@@ -53,7 +53,7 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
     cancelable = true,
     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     elevation = 0.dp,
-    backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
   ) {
     Box(modifier = Modifier.fillMaxWidth()) {
       Column(

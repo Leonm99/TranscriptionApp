@@ -84,13 +84,6 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
     )
 
     SettingsSwitch(
-      state = settings.formatSwitchState,
-      title = { Text(text = "Text correction") },
-      subtitle = { Text(text = "Format the Output Text.") },
-      icon = { Icon(imageVector = Icons.Default.Search, contentDescription = "Format") },
-      onCheckedChange = { viewModel.updateSwitchState(it) },
-    )
-    SettingsSwitch(
       state = settings.mockApi,
       title = { Text(text = "MockApi") },
       subtitle = { Text(text = "Mock API for testing") },

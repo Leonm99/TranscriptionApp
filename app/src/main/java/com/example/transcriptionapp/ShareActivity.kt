@@ -80,7 +80,8 @@ class ShareActivity : ComponentActivity() {
       bottomSheetViewModel.closeApp.collect { shouldClose ->
         if (shouldClose) {
           Log.d(TAG, "closeApp: WE GET HERE FAM, WELL AT LEAST I HOPE SO")
-          finishAffinity() // Close the app
+          //finishAffinity() // Close the app
+          finish()
           exitProcess(0)
           Log.d(TAG, "JUST A LIL TEST")
         }
@@ -109,8 +110,9 @@ class ShareActivity : ComponentActivity() {
       when {
         intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true -> {
           handleAudioOrVideoIntent(intent)
+          bottomSheetViewModel.endAfterSave = true
+          bottomSheetViewModel.toggleBottomSheet(true)
           bottomSheetViewModel.transcribeAudios()
-          bottomSheetViewModel.toggleBottomSheet(true, true)
         }
 
         intent.type?.startsWith("text/") == true -> {
@@ -121,8 +123,10 @@ class ShareActivity : ComponentActivity() {
     if (intent?.action == Intent.ACTION_SEND_MULTIPLE) {
       if (intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true) {
         handleAudioOrVideoIntent(intent)
+        bottomSheetViewModel.endAfterSave = true
+        bottomSheetViewModel.toggleBottomSheet(true)
         bottomSheetViewModel.transcribeAudios()
-        bottomSheetViewModel.toggleBottomSheet(true, true)
+
       }
     }
   }

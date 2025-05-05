@@ -67,7 +67,6 @@ constructor(private val settingsRepository: SettingsRepository, private val cont
         Log.d("OpenAiHandler", "API Key: " + userPreferences.userApiKey)
         language = userPreferences.selectedLanguage
         model = userPreferences.selectedModel.takeIf { it.isNotBlank() } ?: "gpt-4o-mini"
-        isFormattingEnabled = userPreferences.formatSwitchState
         mockApi = userPreferences.mockApi
       }
       // if (checkApiKey()) {}

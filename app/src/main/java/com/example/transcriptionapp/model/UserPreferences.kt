@@ -15,7 +15,6 @@ data class UserPreferences(
   val userApiKey: String = "NOT SET",
   val selectedLanguage: String = "English",
   val selectedModel: String = "gpt-4o-mini",
-  val formatSwitchState: Boolean = false,
   val mockApi: Boolean = false,
   val dynamicColor: Boolean = true,
 )

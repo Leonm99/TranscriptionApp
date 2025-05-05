@@ -42,6 +42,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.com.example.transcriptionapp.ui.components.verticalScrollbar
+import com.example.transcriptionapp.ui.theme.SpacingMedium
+import com.example.transcriptionapp.ui.theme.SpacingSmall
 import com.example.transcriptionapp.viewmodel.formatTimestamp
 
 @Composable
@@ -100,7 +102,7 @@ fun TranscriptionCard(
     colors =
       CardDefaults.cardColors(
         containerColor =
-          if (errorMessage == null) MaterialTheme.colorScheme.secondaryContainer
+          if (errorMessage == null) MaterialTheme.colorScheme.primaryContainer
           else MaterialTheme.colorScheme.errorContainer
       ),
   ) {
@@ -137,7 +139,7 @@ fun TranscriptionCard(
       // Use Box to stack elements and position dots at the bottom
       Box(contentAlignment = Alignment.BottomCenter) {
         Column(
-          modifier = Modifier.fillMaxWidth().padding(15.dp),
+          modifier = Modifier.fillMaxWidth().padding(horizontal = SpacingMedium),
           verticalArrangement = Arrangement.Top,
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -147,15 +149,15 @@ fun TranscriptionCard(
             horizontalArrangement = Arrangement.SpaceBetween,
           ) {
             Column(
-              modifier = Modifier.wrapContentSize().offset(y = 6.dp),
+              modifier = Modifier.wrapContentSize().offset(y = 11.dp),
               horizontalAlignment = Alignment.Start,
             ) {
-              Text(text = titleText, style = MaterialTheme.typography.titleLarge)
+              Text(text = titleText, style = MaterialTheme.typography.titleMedium)
 
               Text(
                 modifier = Modifier.padding(bottom = 8.dp),
                 text = transcription.timestamp,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline,
               )
             }
@@ -176,12 +178,12 @@ fun TranscriptionCard(
                     else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
                   )
                 },
-                modifier = Modifier,
+                modifier = Modifier.size(25.dp),
               ) {
                 Icon(
                   Icons.Filled.ContentCopy,
                   contentDescription = "Copy",
-                  modifier = Modifier.size(24.dp),
+                  modifier = Modifier.size(20.dp),
                 )
               }
             }
@@ -189,7 +191,7 @@ fun TranscriptionCard(
 
           HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 200.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 250.dp),
           ) { page ->
             val scrollState = rememberScrollState()
 
@@ -201,11 +203,10 @@ fun TranscriptionCard(
                       .wrapContentHeight()
                       .nestedScroll(rememberNestedScrollInteropConnection())
                       .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState)
-                      .padding(top = 8.dp),
+                      .verticalScrollbar(scrollState),
                   text = transcription.transcriptionText,
                   textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyLarge,
+                  style = MaterialTheme.typography.bodyMedium,
                 )
               } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
                 Text(
@@ -214,11 +215,10 @@ fun TranscriptionCard(
                       .wrapContentHeight()
                       .nestedScroll(rememberNestedScrollInteropConnection())
                       .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState)
-                      .padding(top = 8.dp),
+                      .verticalScrollbar(scrollState),
                   text = transcription.summaryText,
                   textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyLarge,
+                  style = MaterialTheme.typography.bodyMedium,
                 )
               } else if (
                 page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
@@ -232,29 +232,30 @@ fun TranscriptionCard(
                       .wrapContentHeight()
                       .nestedScroll(rememberNestedScrollInteropConnection())
                       .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState)
-                      .padding(top = 8.dp),
+                      .verticalScrollbar(scrollState),
                   text = transcription.translationText,
                   textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyLarge,
+                  style = MaterialTheme.typography.bodyMedium,
                 )
               }
             }
           }
-        }
 
-        Row(
-          Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
-          horizontalArrangement = Arrangement.Center,
-        ) {
-          repeat(pagerState.pageCount) { iteration ->
-            val color =
-              if (pagerState.currentPage == iteration)
-                MaterialTheme.colorScheme.onSecondaryContainer
-              else MaterialTheme.colorScheme.onSecondary
-            Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(4.dp))
+          Row(
+            Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
+            horizontalArrangement = Arrangement.Center,
+          ) {
+            repeat(pagerState.pageCount) { iteration ->
+              val color =
+                if (pagerState.currentPage == iteration)
+                  MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onPrimary
+              Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(5.dp))
+            }
           }
         }
+
+
       }
     }
   }

@@ -90,17 +90,19 @@ constructor(
   val closeApp: StateFlow<Boolean>
     get() = _closeApp
 
-  private var endAfterSave = false
+
+
+  var endAfterSave: Boolean = false
 
   private var cachedAudioUri: Uri? = null
 
   private var audioUris = mutableStateListOf<Uri>()
 
-  fun toggleBottomSheet(toggle: Boolean, isOverlay: Boolean = false) {
+  fun toggleBottomSheet(toggle: Boolean) {
     _isBottomSheetVisible.value = toggle
-    if (isOverlay) {
-      endAfterSave = true
-    }
+    if(_isBottomSheetVisible.value == false && endAfterSave == true){
+      onSaveClick()
+      }
   }
 
   init {
@@ -260,13 +262,14 @@ constructor(
         transcriptionRepository.upsertTranscription(_transcription.value)
         showToast("Saved")
       }
-
       clearTranscription()
-      toggleBottomSheet(false)
       if (endAfterSave) {
-        Log.d(TAG, "endAfterSave: WE GET HERE FAM")
         _closeApp.value = true
       }
+      if(_isBottomSheetVisible.value == true){
+        toggleBottomSheet(false)
+      }
+
     }
   }
 

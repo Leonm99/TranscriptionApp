@@ -72,10 +72,6 @@ constructor(
     viewModelScope.launch(Dispatchers.IO) { settingsRepository.setModel(model) }
   }
 
-  fun updateSwitchState(newState: Boolean) {
-    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setFormatSwitchState(newState) }
-  }
-
   fun setMockApi(mockApi: Boolean) {
     viewModelScope.launch(Dispatchers.IO) { settingsRepository.setMockApi(mockApi) }
   }
