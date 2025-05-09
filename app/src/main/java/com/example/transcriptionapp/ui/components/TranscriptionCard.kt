@@ -138,121 +138,135 @@ fun TranscriptionCard(
           color = MaterialTheme.colorScheme.error,
         )
       }
-    } else {}
-    Box(contentAlignment = Alignment.BottomCenter) {
-      Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = SpacingMedium),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally,
-      ) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
-          horizontalArrangement = Arrangement.SpaceBetween,
+    } else {
+      Box(contentAlignment = Alignment.BottomCenter) {
+        Column(
+          modifier = Modifier.fillMaxWidth().padding(horizontal = SpacingMedium),
+          verticalArrangement = Arrangement.Top,
+          horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-          Column(
-            modifier = Modifier.wrapContentSize().offset(y = 11.dp),
-            horizontalAlignment = Alignment.Start,
-          ) {
-            Text(text = titleText, style = MaterialTheme.typography.titleMedium)
-
-            Text(
-              modifier = Modifier.padding(bottom = 8.dp),
-              text = transcription.timestamp,
-              style = MaterialTheme.typography.labelSmall,
-              color = MaterialTheme.colorScheme.outline,
-            )
-          }
-
-          if (isSelectionMode) {
-            Checkbox(checked = isSelected, onCheckedChange = { onSelected() }, modifier = Modifier)
-          } else {
-            IconButton(
-              onClick = {
-                onCopyClicked(
-                  if (pagerState.currentPage == 0) transcription.transcriptionText
-                  else if (pagerState.currentPage == 1 && transcription.summaryText != null)
-                    transcription.summaryText
-                  else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
-                )
-              },
-              modifier = Modifier.size(25.dp),
-            ) {
-              Icon(
-                Icons.Filled.ContentCopy,
-                contentDescription = "Copy",
-                modifier = Modifier.size(20.dp),
-              )
-            }
-          }
-        }
-
-        HorizontalPager(
-          state = pagerState,
-          modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 250.dp),
-        ) { page ->
-          val scrollState = rememberScrollState()
-
-          Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-            if (page == 0) {
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.transcriptionText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.summaryText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            } else if (
-              page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
-                !transcription.translationText.isNullOrEmpty()
-            ) {
-              val scrollState = rememberScrollState()
-
-              Text(
-                modifier =
-                  Modifier.fillMaxWidth()
-                    .wrapContentHeight()
-                    .nestedScroll(rememberNestedScrollInteropConnection())
-                    .verticalScroll(scrollState)
-                    .verticalScrollbar(scrollState),
-                text = transcription.translationText,
-                textAlign = TextAlign.Start,
-                style = MaterialTheme.typography.bodyMedium,
-              )
-            }
-          }
-        }
-        if (pageCount > 1) {
           Row(
-            Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
-            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth().padding(bottom = SpacingMedium),
+            verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
+            horizontalArrangement = Arrangement.SpaceBetween,
           ) {
-            repeat(pagerState.pageCount) { iteration ->
-              val color =
-                if (pagerState.currentPage == iteration)
-                  MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onPrimary
-              Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(5.dp))
+            Column(
+              modifier = Modifier.wrapContentSize().offset(y = 11.dp),
+              horizontalAlignment = Alignment.Start,
+            ) {
+              Text(
+                text = titleText,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+              )
+
+              Text(
+                modifier = Modifier,
+                text = transcription.timestamp,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+              )
+            }
+
+            if (isSelectionMode) {
+              Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelected() },
+                modifier = Modifier,
+              )
+            } else {
+              IconButton(
+                onClick = {
+                  onCopyClicked(
+                    if (pagerState.currentPage == 0) transcription.transcriptionText
+                    else if (pagerState.currentPage == 1 && transcription.summaryText != null)
+                      transcription.summaryText
+                    else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
+                  )
+                },
+                modifier = Modifier.size(25.dp),
+              ) {
+                Icon(
+                  Icons.Filled.ContentCopy,
+                  contentDescription = "Copy",
+                  modifier = Modifier.size(20.dp),
+                )
+              }
             }
           }
-        } else {
-          Spacer(modifier = Modifier.height(10.dp))
+
+          HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 250.dp),
+          ) { page ->
+            val scrollState = rememberScrollState()
+
+            Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+              if (page == 0) {
+                Text(
+                  modifier =
+                    Modifier.fillMaxWidth()
+                      .wrapContentHeight()
+                      .nestedScroll(rememberNestedScrollInteropConnection())
+                      .verticalScroll(scrollState)
+                      .verticalScrollbar(scrollState),
+                  text = transcription.transcriptionText,
+                  textAlign = TextAlign.Start,
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+              } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
+                Text(
+                  modifier =
+                    Modifier.fillMaxWidth()
+                      .wrapContentHeight()
+                      .nestedScroll(rememberNestedScrollInteropConnection())
+                      .verticalScroll(scrollState)
+                      .verticalScrollbar(scrollState),
+                  text = transcription.summaryText,
+                  textAlign = TextAlign.Start,
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+              } else if (
+                page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
+                  !transcription.translationText.isNullOrEmpty()
+              ) {
+                val scrollState = rememberScrollState()
+
+                Text(
+                  modifier =
+                    Modifier.fillMaxWidth()
+                      .wrapContentHeight()
+                      .nestedScroll(rememberNestedScrollInteropConnection())
+                      .verticalScroll(scrollState)
+                      .verticalScrollbar(scrollState),
+                  text = transcription.translationText,
+                  textAlign = TextAlign.Start,
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+              }
+            }
+          }
+          if (pageCount > 1) {
+            Row(
+              Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
+              horizontalArrangement = Arrangement.Center,
+            ) {
+              repeat(pagerState.pageCount) { iteration ->
+                val color =
+                  if (pagerState.currentPage == iteration)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                  else MaterialTheme.colorScheme.onPrimary
+                Box(
+                  modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(5.dp)
+                )
+              }
+            }
+          } else {
+            Spacer(modifier = Modifier.height(10.dp))
+          }
         }
       }
     }

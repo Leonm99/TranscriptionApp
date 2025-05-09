@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -90,7 +91,19 @@ constructor(
   val closeApp: StateFlow<Boolean>
     get() = _closeApp
 
+  private val _totalAudioCount = MutableStateFlow(0)
+  val totalAudioCount: StateFlow<Int> = _totalAudioCount.asStateFlow()
 
+  private val _currentAudioIndex = MutableStateFlow(0)
+  val currentAudioIndex: StateFlow<Int> = _currentAudioIndex.asStateFlow()
+
+  enum class ProcessingStep {
+    PROCESSING,
+    TRANSCRIPTION,
+  }
+
+  private val _processingStep = MutableStateFlow(ProcessingStep.PROCESSING)
+  val processingStep: StateFlow<ProcessingStep> = _processingStep.asStateFlow()
 
   var endAfterSave: Boolean = false
 
@@ -100,9 +113,9 @@ constructor(
 
   fun toggleBottomSheet(toggle: Boolean) {
     _isBottomSheetVisible.value = toggle
-    if(_isBottomSheetVisible.value == false && endAfterSave == true){
+    if (_isBottomSheetVisible.value == false && endAfterSave == true) {
       onSaveClick()
-      }
+    }
   }
 
   init {
@@ -122,6 +135,7 @@ constructor(
 
   fun onAudioSelected(audioUri: Uri, context: Context) {
     audioUris += audioUri
+    _totalAudioCount.value = audioUris.size
   }
 
   fun transcribeAudios() {
@@ -135,16 +149,28 @@ constructor(
         toggleBottomSheet(true)
         _isLoading.value = true
         _transcriptionError.value = null
+        _currentAudioIndex.value = 0
+        _processingStep.value = ProcessingStep.PROCESSING
       }
 
       try {
 
-        val audioFiles =
-          audioUris.map { uri -> withContext(Dispatchers.IO) { convertToMP3(uri, context) } }
+        val audioFiles: List<File> =
+          audioUris.mapIndexed { index, uri ->
+            val convertedFile = withContext(Dispatchers.IO) { convertToMP3(uri, context) }
+
+            withContext(Dispatchers.Main) { _currentAudioIndex.value = index + 1 }
+            convertedFile!!
+          }
+        withContext(Dispatchers.Main) {
+          _processingStep.value = ProcessingStep.TRANSCRIPTION
+          _currentAudioIndex.value = 0 // Reset index for transcription
+        }
 
         val transcriptionResults =
-          audioFiles.map { audioFile ->
-            withContext(Dispatchers.IO) { openAiService.whisper(audioFile!!) }
+          audioFiles.mapIndexed { index, audioFile ->
+            withContext(Dispatchers.Main) { _currentAudioIndex.value = index + 1 }
+            withContext(Dispatchers.IO) { openAiService.whisper(audioFile) }
           }
 
         Log.d(TAG, "Transcribing ${audioUris.size} audios...")
@@ -266,10 +292,9 @@ constructor(
       if (endAfterSave) {
         _closeApp.value = true
       }
-      if(_isBottomSheetVisible.value == true){
+      if (_isBottomSheetVisible.value == true) {
         toggleBottomSheet(false)
       }
-
     }
   }
 

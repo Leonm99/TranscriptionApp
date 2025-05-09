@@ -1,5 +1,6 @@
 package com.example.transcriptionapp.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.transcriptionapp.ui.theme.SpacingMedium
 import com.example.transcriptionapp.ui.theme.SpacingSmall
 import com.example.transcriptionapp.util.copyToClipboard
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
@@ -46,6 +49,10 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
   val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
   val errorText by viewModel.transcriptionError.collectAsStateWithLifecycle()
 
+  val processingStep by viewModel.processingStep.collectAsStateWithLifecycle()
+  val totalAudioCount by viewModel.totalAudioCount.collectAsStateWithLifecycle()
+  val currentAudioIndex by viewModel.currentAudioIndex.collectAsStateWithLifecycle()
+
   val context = LocalContext.current
 
   ModalSheet(
@@ -58,6 +65,14 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
     backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
   ) {
     Box(modifier = Modifier.fillMaxWidth()) {
+      HandleBar(
+        modifier =
+          Modifier.align(Alignment.TopCenter)
+            .width(50.dp)
+            .padding(top = SpacingMedium)
+            .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(2.dp))
+      )
+
       Column(
         modifier =
           Modifier.verticalScroll(rememberScrollState())
@@ -73,11 +88,25 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
             contentAlignment = Alignment.Center,
           ) {
             CircularProgressIndicator(modifier = Modifier.size(100.dp))
-            Text(
-              modifier = Modifier.offset(y = (70).dp),
-              text = "Loading...",
-              color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
+            // Display the counter text based on the processing step
+            if (totalAudioCount > 1 && currentAudioIndex > 0) {
+              val stepText =
+                when (processingStep) {
+                  BottomSheetViewModel.ProcessingStep.PROCESSING -> "Processing"
+                  BottomSheetViewModel.ProcessingStep.TRANSCRIPTION -> "Transcribing"
+                }
+              Text(
+                modifier = Modifier.offset(y = (70).dp),
+                text = "$stepText $currentAudioIndex of $totalAudioCount",
+                color = MaterialTheme.colorScheme.primary,
+              )
+            } else {
+              Text(
+                modifier = Modifier.offset(y = (70).dp),
+                text = "Loading...", // Or a more specific initial loading message
+                color = MaterialTheme.colorScheme.primary,
+              )
+            }
           }
         } else {
           Column(modifier = Modifier) {
