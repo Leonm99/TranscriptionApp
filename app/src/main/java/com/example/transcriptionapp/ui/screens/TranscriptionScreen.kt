@@ -6,8 +6,6 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,9 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -67,7 +63,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
 
   val transcriptionListState = viewModel.transcriptionList.collectAsStateWithLifecycle()
   val transcriptionList = transcriptionListState.value
-  val isBottomSheetVisible = viewModel.isBottomSheetVisible.collectAsStateWithLifecycle().value
+  viewModel.isBottomSheetVisible.collectAsStateWithLifecycle().value
   val selectedItems = remember { mutableStateListOf<Int>() }
   var isSelectionMode = remember { mutableStateOf<Boolean>(false) }
   var isSelectAll = remember { mutableStateOf<Boolean>(false) }
@@ -108,7 +104,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
       title = { Text(stringResource(R.string.app_name)) },
       colors =
         TopAppBarDefaults.topAppBarColors(
-          containerColor = MaterialTheme.colorScheme.primaryContainer,
+          containerColor = MaterialTheme.colorScheme.surface,
           titleContentColor = MaterialTheme.colorScheme.primary,
         ),
       actions = {
@@ -121,7 +117,11 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
               isSelectAll.value = false
             }
           ) {
-            Icon(imageVector = Icons.Filled.Cancel, contentDescription = "Cancel")
+            Icon(
+              imageVector = Icons.Filled.Cancel,
+              contentDescription = "Cancel",
+              tint = MaterialTheme.colorScheme.primary,
+            )
           }
           IconButton(
             onClick = {
@@ -131,11 +131,19 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
               isSelectAll.value = false
             }
           ) {
-            Icon(imageVector = Icons.Filled.DeleteSweep, contentDescription = "Delete")
+            Icon(
+              imageVector = Icons.Filled.DeleteSweep,
+              contentDescription = "Delete",
+              tint = MaterialTheme.colorScheme.primary,
+            )
           }
         } else {
           IconButton(onClick = { onSettingsClick() }) {
-            Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
+            Icon(
+              imageVector = Icons.Filled.Settings,
+              contentDescription = "Settings",
+              tint = MaterialTheme.colorScheme.primary,
+            )
           }
         }
       },
@@ -207,7 +215,6 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
             modifier =
               Modifier.padding(start = 4.dp, end = 4.dp, top = 9.dp)
                 .shadow(elevation = 5.dp, shape = RoundedCornerShape(12.dp)),
-            // Increased horizontal and vertical padding
           )
         }
       }
@@ -219,12 +226,17 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
         elevation = FloatingActionButtonDefaults.elevation(),
         onClick = { viewModel.onSampleClick() },
         modifier = Modifier.align(Alignment.End).padding(bottom = 4.dp),
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
       ) {
         Icon(imageVector = Icons.Filled.Addchart, contentDescription = "Add Sample Data")
       }
       ExtendedFloatingActionButton(
         elevation = FloatingActionButtonDefaults.elevation(),
         onClick = { viewModel.buttonOnClick(launcher) },
+        modifier = Modifier.align(Alignment.End),
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         icon = {
           Icon(imageVector = Icons.Filled.Transcribe, contentDescription = "Transcribe File")
         },
@@ -233,9 +245,10 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
     }
   }
 
-  AnimatedVisibility(isBottomSheetVisible, exit = fadeOut(), enter = fadeIn()) {
-    Box(modifier = Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black))
-  }
+  //  AnimatedVisibility(isBottomSheetVisible, exit = fadeOut(), enter = fadeIn()) {
+  //    Box(modifier =
+  // Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black))
+  //  }
 
   ScrollableWithFixedPartsModalSheet(viewModel)
 }

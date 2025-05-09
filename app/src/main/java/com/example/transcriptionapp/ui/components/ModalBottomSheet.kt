@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,12 +32,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.transcriptionapp.ui.theme.SpacingSmall
 import com.example.transcriptionapp.util.copyToClipboard
 import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 import eu.wewox.modalsheet.ExperimentalSheetApi
 import eu.wewox.modalsheet.ModalSheet
 
-@OptIn(ExperimentalSheetApi::class)
+@OptIn(ExperimentalSheetApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
   val showBottomSheet by viewModel.isBottomSheetVisible.collectAsStateWithLifecycle()
@@ -53,7 +55,7 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
     cancelable = true,
     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     elevation = 0.dp,
-    backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+    backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
   ) {
     Box(modifier = Modifier.fillMaxWidth()) {
       Column(
@@ -80,7 +82,7 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
         } else {
           Column(modifier = Modifier) {
             TranscriptionCard(
-              modifier = Modifier,
+              modifier = Modifier.padding(horizontal = SpacingSmall),
               transcription,
               { text -> copyToClipboard(context, text) },
               false,

@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -43,12 +45,14 @@ import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.com.example.transcriptionapp.ui.components.verticalScrollbar
 import com.example.transcriptionapp.ui.theme.SpacingMedium
-import com.example.transcriptionapp.ui.theme.SpacingSmall
 import com.example.transcriptionapp.viewmodel.formatTimestamp
+import eu.wewox.modalsheet.ExperimentalSheetApi
 
+@OptIn(ExperimentalSheetApi::class)
 @Composable
 @Preview
 fun TranscriptionCardPreview() {
+
   TranscriptionCard(
     transcription =
       Transcription(
@@ -102,7 +106,7 @@ fun TranscriptionCard(
     colors =
       CardDefaults.cardColors(
         containerColor =
-          if (errorMessage == null) MaterialTheme.colorScheme.primaryContainer
+          if (errorMessage == null) MaterialTheme.colorScheme.secondaryContainer
           else MaterialTheme.colorScheme.errorContainer
       ),
   ) {
@@ -134,113 +138,107 @@ fun TranscriptionCard(
           color = MaterialTheme.colorScheme.error,
         )
       }
-    } else {
-
-      // Use Box to stack elements and position dots at the bottom
-      Box(contentAlignment = Alignment.BottomCenter) {
-        Column(
-          modifier = Modifier.fillMaxWidth().padding(horizontal = SpacingMedium),
-          verticalArrangement = Arrangement.Top,
-          horizontalAlignment = Alignment.CenterHorizontally,
+    } else {}
+    Box(contentAlignment = Alignment.BottomCenter) {
+      Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = SpacingMedium),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
+          horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
-            horizontalArrangement = Arrangement.SpaceBetween,
+          Column(
+            modifier = Modifier.wrapContentSize().offset(y = 11.dp),
+            horizontalAlignment = Alignment.Start,
           ) {
-            Column(
-              modifier = Modifier.wrapContentSize().offset(y = 11.dp),
-              horizontalAlignment = Alignment.Start,
+            Text(text = titleText, style = MaterialTheme.typography.titleMedium)
+
+            Text(
+              modifier = Modifier.padding(bottom = 8.dp),
+              text = transcription.timestamp,
+              style = MaterialTheme.typography.labelSmall,
+              color = MaterialTheme.colorScheme.outline,
+            )
+          }
+
+          if (isSelectionMode) {
+            Checkbox(checked = isSelected, onCheckedChange = { onSelected() }, modifier = Modifier)
+          } else {
+            IconButton(
+              onClick = {
+                onCopyClicked(
+                  if (pagerState.currentPage == 0) transcription.transcriptionText
+                  else if (pagerState.currentPage == 1 && transcription.summaryText != null)
+                    transcription.summaryText
+                  else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
+                )
+              },
+              modifier = Modifier.size(25.dp),
             ) {
-              Text(text = titleText, style = MaterialTheme.typography.titleMedium)
+              Icon(
+                Icons.Filled.ContentCopy,
+                contentDescription = "Copy",
+                modifier = Modifier.size(20.dp),
+              )
+            }
+          }
+        }
+
+        HorizontalPager(
+          state = pagerState,
+          modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 250.dp),
+        ) { page ->
+          val scrollState = rememberScrollState()
+
+          Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+            if (page == 0) {
+              Text(
+                modifier =
+                  Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .nestedScroll(rememberNestedScrollInteropConnection())
+                    .verticalScroll(scrollState)
+                    .verticalScrollbar(scrollState),
+                text = transcription.transcriptionText,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyMedium,
+              )
+            } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
+              Text(
+                modifier =
+                  Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .nestedScroll(rememberNestedScrollInteropConnection())
+                    .verticalScroll(scrollState)
+                    .verticalScrollbar(scrollState),
+                text = transcription.summaryText,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyMedium,
+              )
+            } else if (
+              page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
+                !transcription.translationText.isNullOrEmpty()
+            ) {
+              val scrollState = rememberScrollState()
 
               Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = transcription.timestamp,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
+                modifier =
+                  Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .nestedScroll(rememberNestedScrollInteropConnection())
+                    .verticalScroll(scrollState)
+                    .verticalScrollbar(scrollState),
+                text = transcription.translationText,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyMedium,
               )
             }
-
-            if (isSelectionMode) {
-              Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onSelected() },
-                modifier = Modifier,
-              )
-            } else {
-              IconButton(
-                onClick = {
-                  onCopyClicked(
-                    if (pagerState.currentPage == 0) transcription.transcriptionText
-                    else if (pagerState.currentPage == 1 && transcription.summaryText != null)
-                      transcription.summaryText
-                    else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
-                  )
-                },
-                modifier = Modifier.size(25.dp),
-              ) {
-                Icon(
-                  Icons.Filled.ContentCopy,
-                  contentDescription = "Copy",
-                  modifier = Modifier.size(20.dp),
-                )
-              }
-            }
           }
-
-          HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 250.dp),
-          ) { page ->
-            val scrollState = rememberScrollState()
-
-            Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-              if (page == 0) {
-                Text(
-                  modifier =
-                    Modifier.fillMaxWidth()
-                      .wrapContentHeight()
-                      .nestedScroll(rememberNestedScrollInteropConnection())
-                      .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState),
-                  text = transcription.transcriptionText,
-                  textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
-                )
-              } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
-                Text(
-                  modifier =
-                    Modifier.fillMaxWidth()
-                      .wrapContentHeight()
-                      .nestedScroll(rememberNestedScrollInteropConnection())
-                      .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState),
-                  text = transcription.summaryText,
-                  textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
-                )
-              } else if (
-                page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
-                  !transcription.translationText.isNullOrEmpty()
-              ) {
-                val scrollState = rememberScrollState()
-
-                Text(
-                  modifier =
-                    Modifier.fillMaxWidth()
-                      .wrapContentHeight()
-                      .nestedScroll(rememberNestedScrollInteropConnection())
-                      .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState),
-                  text = transcription.translationText,
-                  textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
-                )
-              }
-            }
-          }
-
+        }
+        if (pageCount > 1) {
           Row(
             Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
             horizontalArrangement = Arrangement.Center,
@@ -253,9 +251,9 @@ fun TranscriptionCard(
               Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(5.dp))
             }
           }
+        } else {
+          Spacer(modifier = Modifier.height(10.dp))
         }
-
-
       }
     }
   }
