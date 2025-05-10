@@ -113,7 +113,7 @@ constructor(
 
   fun toggleBottomSheet(toggle: Boolean) {
     _isBottomSheetVisible.value = toggle
-    if (_isBottomSheetVisible.value == false && endAfterSave == true) {
+    if (_isBottomSheetVisible.value == false) {
       onSaveClick()
     }
   }
@@ -284,7 +284,7 @@ constructor(
 
   fun onSaveClick() {
     viewModelScope.launch {
-      if (_transcriptionError.value.isNullOrEmpty()) {
+      if (_transcriptionError.value.isNullOrEmpty() && _transcription.value.transcriptionText.isNotBlank()) {
         transcriptionRepository.upsertTranscription(_transcription.value)
         showToast("Saved")
       }
