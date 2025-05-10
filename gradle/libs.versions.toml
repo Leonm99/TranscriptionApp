@@ -1,7 +1,7 @@
 [versions]
 advancedBottomsheetMaterial3 = "0.1.0"
 agp = "8.10.0-alpha08"
-datastorePreferences = "1.1.4"
+datastorePreferences = "1.1.6"
 
 ffmpegKitFull = "6.0-2.LTS"
 hiltAndroid = "2.55"
@@ -12,13 +12,13 @@ junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 ktorClientAndroid = "3.0.3"
-lifecycleRuntimeKtx = "2.8.7"
+lifecycleRuntimeKtx = "2.9.0"
 activityCompose = "1.10.1"
-composeBom = "2025.04.00"
+composeBom = "2025.05.00"
 material = "1.12.0"
 
 modalsheet = "0.7.0"
-navigationCompose = "2.8.9"
+navigationCompose = "2.9.0"
 retrofit = "2.11.0"
 ksp = "2.1.10-1.0.29"
 
@@ -27,10 +27,10 @@ converter-gson = "2.9.0"
 okhttp = "4.12.0"
 logging-interceptor = "4.11.0"
 compose-settings = "2.6.0"
-lifecycleViewmodelCompose = "2.8.7"
+lifecycleViewmodelCompose = "2.9.0"
 materialIconsExtendedVersion = "1.7.8"
-roomKtx = "2.7.0"
-uiTextGoogleFonts = "1.7.8"
+roomKtx = "2.7.1"
+uiTextGoogleFonts = "1.8.1"
 
 
 [libraries]

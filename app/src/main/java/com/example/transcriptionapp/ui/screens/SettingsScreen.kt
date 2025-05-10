@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,13 +51,17 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
       title = { Text("Settings") },
       navigationIcon = {
         IconButton(onClick = { onBackClick() }) {
-          Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Back",
+            tint = MaterialTheme.colorScheme.primary,
+          )
         }
       },
       colors =
         TopAppBarDefaults.topAppBarColors(
           containerColor = MaterialTheme.colorScheme.primaryContainer,
-          titleContentColor = MaterialTheme.colorScheme.primary,
+          titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ),
     )
 

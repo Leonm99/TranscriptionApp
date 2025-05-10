@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -43,12 +45,14 @@ import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.com.example.transcriptionapp.ui.components.verticalScrollbar
 import com.example.transcriptionapp.ui.theme.SpacingMedium
-import com.example.transcriptionapp.ui.theme.SpacingSmall
 import com.example.transcriptionapp.viewmodel.formatTimestamp
+import eu.wewox.modalsheet.ExperimentalSheetApi
 
+@OptIn(ExperimentalSheetApi::class)
 @Composable
 @Preview
 fun TranscriptionCardPreview() {
+
   TranscriptionCard(
     transcription =
       Transcription(
@@ -102,7 +106,7 @@ fun TranscriptionCard(
     colors =
       CardDefaults.cardColors(
         containerColor =
-          if (errorMessage == null) MaterialTheme.colorScheme.primaryContainer
+          if (errorMessage == null) MaterialTheme.colorScheme.secondaryContainer
           else MaterialTheme.colorScheme.errorContainer
       ),
   ) {
@@ -135,8 +139,6 @@ fun TranscriptionCard(
         )
       }
     } else {
-
-      // Use Box to stack elements and position dots at the bottom
       Box(contentAlignment = Alignment.BottomCenter) {
         Column(
           modifier = Modifier.fillMaxWidth().padding(horizontal = SpacingMedium),
@@ -144,7 +146,7 @@ fun TranscriptionCard(
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = SpacingMedium),
             verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
             horizontalArrangement = Arrangement.SpaceBetween,
           ) {
@@ -152,13 +154,17 @@ fun TranscriptionCard(
               modifier = Modifier.wrapContentSize().offset(y = 11.dp),
               horizontalAlignment = Alignment.Start,
             ) {
-              Text(text = titleText, style = MaterialTheme.typography.titleMedium)
+              Text(
+                text = titleText,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+              )
 
               Text(
-                modifier = Modifier.padding(bottom = 8.dp),
+                modifier = Modifier,
                 text = transcription.timestamp,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
               )
             }
 
@@ -207,6 +213,7 @@ fun TranscriptionCard(
                   text = transcription.transcriptionText,
                   textAlign = TextAlign.Start,
                   style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
               } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
                 Text(
@@ -219,6 +226,7 @@ fun TranscriptionCard(
                   text = transcription.summaryText,
                   textAlign = TextAlign.Start,
                   style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
               } else if (
                 page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
@@ -236,26 +244,30 @@ fun TranscriptionCard(
                   text = transcription.translationText,
                   textAlign = TextAlign.Start,
                   style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
               }
             }
           }
-
-          Row(
-            Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
-            horizontalArrangement = Arrangement.Center,
-          ) {
-            repeat(pagerState.pageCount) { iteration ->
-              val color =
-                if (pagerState.currentPage == iteration)
-                  MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onPrimary
-              Box(modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(5.dp))
+          if (pageCount > 1) {
+            Row(
+              Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
+              horizontalArrangement = Arrangement.Center,
+            ) {
+              repeat(pagerState.pageCount) { iteration ->
+                val color =
+                  if (pagerState.currentPage == iteration)
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                  else MaterialTheme.colorScheme.onPrimary
+                Box(
+                  modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(5.dp)
+                )
+              }
             }
+          } else {
+            Spacer(modifier = Modifier.height(10.dp))
           }
         }
-
-
       }
     }
   }
