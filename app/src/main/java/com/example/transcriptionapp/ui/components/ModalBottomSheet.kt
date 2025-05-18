@@ -200,6 +200,7 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
               isSelected = false,
               isSelectionMode = false,
               onSelected = {},
+              onClick = {},
 
 
               )
