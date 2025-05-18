@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.ksp)
   alias(libs.plugins.dagger.hilt.android)
   alias(libs.plugins.room)
+  alias(libs.plugins.gservices)
 }
 
 android {
@@ -78,6 +79,9 @@ dependencies {
   ksp(libs.hilt.compiler)
 
   implementation(libs.ffmpeg.kit.full)
+
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.functions)
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)

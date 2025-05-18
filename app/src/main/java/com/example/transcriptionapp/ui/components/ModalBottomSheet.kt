@@ -73,6 +73,34 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
             .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(2.dp))
       )
 
+      if (isLoading) {
+        Box(
+          modifier = Modifier.fillMaxWidth().size(240.dp).padding(bottom = 45.dp),
+          contentAlignment = Alignment.Center,
+        ) {
+          CircularProgressIndicator(modifier = Modifier.size(100.dp))
+          // Display the counter text based on the processing step
+          if (totalAudioCount > 1 && currentAudioIndex > 0) {
+            val stepText =
+              when (processingStep) {
+                BottomSheetViewModel.ProcessingStep.PROCESSING -> "Processing"
+                BottomSheetViewModel.ProcessingStep.TRANSCRIPTION -> "Transcribing"
+              }
+            Text(
+              modifier = Modifier.offset(y = (70).dp),
+              text = "$stepText $currentAudioIndex of $totalAudioCount",
+              color = MaterialTheme.colorScheme.primary,
+            )
+          } else {
+            Text(
+              modifier = Modifier.offset(y = (70).dp),
+              text = "Loading...",
+              color = MaterialTheme.colorScheme.primary,
+            )
+          }
+        }
+      } else {
+
       Column(
         modifier =
           Modifier.verticalScroll(rememberScrollState())
@@ -82,33 +110,7 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
       ) {
 
         // ###################################CONTENT############################################
-        if (isLoading) {
-          Box(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 50.dp),
-            contentAlignment = Alignment.Center,
-          ) {
-            CircularProgressIndicator(modifier = Modifier.size(100.dp))
-            // Display the counter text based on the processing step
-            if (totalAudioCount > 1 && currentAudioIndex > 0) {
-              val stepText =
-                when (processingStep) {
-                  BottomSheetViewModel.ProcessingStep.PROCESSING -> "Processing"
-                  BottomSheetViewModel.ProcessingStep.TRANSCRIPTION -> "Transcribing"
-                }
-              Text(
-                modifier = Modifier.offset(y = (70).dp),
-                text = "$stepText $currentAudioIndex of $totalAudioCount",
-                color = MaterialTheme.colorScheme.primary,
-              )
-            } else {
-              Text(
-                modifier = Modifier.offset(y = (70).dp),
-                text = "Loading...", // Or a more specific initial loading message
-                color = MaterialTheme.colorScheme.primary,
-              )
-            }
-          }
-        } else {
+
           Column(modifier = Modifier) {
             TranscriptionCard(
               modifier = Modifier.padding(horizontal = SpacingSmall),
@@ -120,7 +122,7 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
               errorText,
             )
           }
-        }
+
         // ###################################CONTENT############################################
       }
 
@@ -172,6 +174,7 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
             Icon(Icons.Default.Refresh, contentDescription = "Retry", modifier = Modifier)
           }
         }
+      }
       }
     }
   }

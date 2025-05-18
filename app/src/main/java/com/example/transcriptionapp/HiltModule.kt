@@ -6,7 +6,7 @@ import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.room.Room
 import com.example.transcriptionapp.api.MockOpenAiHandler
-import com.example.transcriptionapp.api.OpenAiHandler
+import com.example.transcriptionapp.api.FirebaseApiClient
 import com.example.transcriptionapp.api.OpenAiServiceFactory
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
@@ -85,11 +85,11 @@ object HiltModule {
 
   @Provides
   @Singleton
-  fun provideOpenAiHandler(
+  fun provideFirebaseApiClient(
     settingsRepository: SettingsRepository,
     @ApplicationContext context: Context,
-  ): OpenAiHandler {
-    return OpenAiHandler(settingsRepository, context)
+  ): FirebaseApiClient {
+    return FirebaseApiClient(settingsRepository, context)
   }
 
   @Provides
@@ -101,11 +101,11 @@ object HiltModule {
   @Provides
   @Singleton
   fun provideOpenAiServiceFactory(
-    openAiHandler: OpenAiHandler,
+   firebaseApiClient: FirebaseApiClient,
     mockOpenAiHandler: MockOpenAiHandler,
   ): OpenAiServiceFactory {
     return OpenAiServiceFactory(
-      openAiHandler = openAiHandler,
+      firebaseApiClient = firebaseApiClient,
       mockOpenAiHandler = mockOpenAiHandler,
     )
   }

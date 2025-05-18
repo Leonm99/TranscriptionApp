@@ -25,11 +25,6 @@ class MockOpenAiHandler() : OpenAiService {
     return Result.success(text.repeat(8))
   }
 
-  suspend fun correctSpelling(userText: String): String {
-
-    return text
-  }
-
   suspend fun checkApiKey(apiKey: String): Boolean {
 
     return true

@@ -6,7 +6,7 @@ import javax.inject.Inject
 class OpenAiServiceFactory
 @Inject
 constructor(
-  private val openAiHandler: OpenAiHandler,
+  private val firebaseApiClient: FirebaseApiClient,
   private val mockOpenAiHandler: MockOpenAiHandler,
 ) {
 
@@ -14,7 +14,7 @@ constructor(
     return if (userPreferences.mockApi) {
       mockOpenAiHandler
     } else {
-      openAiHandler
+      firebaseApiClient
     }
   }
 }

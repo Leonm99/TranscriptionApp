@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
         dynamicColor = userPreferences.dynamicColor
         isApiKeyPresent = userPreferences.userApiKey.isNotBlank()
       }
+
     }
     enableEdgeToEdge()
     setContent {

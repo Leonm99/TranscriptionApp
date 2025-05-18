@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.com.example.transcriptionapp.ui.components.verticalScrollbar
 import com.example.transcriptionapp.ui.theme.SpacingMedium
+import com.example.transcriptionapp.ui.theme.SpacingSmall
 import com.example.transcriptionapp.viewmodel.formatTimestamp
 import eu.wewox.modalsheet.ExperimentalSheetApi
 
@@ -146,7 +147,7 @@ fun TranscriptionCard(
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = SpacingMedium),
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = SpacingSmall),
             verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
             horizontalArrangement = Arrangement.SpaceBetween,
           ) {
@@ -184,7 +185,7 @@ fun TranscriptionCard(
                     else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
                   )
                 },
-                modifier = Modifier.size(25.dp),
+                modifier = Modifier.size(25.dp).padding(top=4.dp),
               ) {
                 Icon(
                   Icons.Filled.ContentCopy,
@@ -197,7 +198,7 @@ fun TranscriptionCard(
 
           HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 250.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 250.dp).padding(top = 4.dp),
           ) { page ->
             val scrollState = rememberScrollState()
 
