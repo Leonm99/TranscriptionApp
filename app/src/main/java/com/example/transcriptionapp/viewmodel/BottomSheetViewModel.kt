@@ -68,8 +68,8 @@ constructor(
         timestamp = "null",
       )
     )
-
   val transcription: StateFlow<Transcription> = _transcription.asStateFlow()
+
   val visiblePermissionDialogQueue = mutableStateListOf<String>()
 
   private val _transcriptionError = MutableStateFlow<String?>(null)
@@ -81,7 +81,8 @@ constructor(
   private val _transcriptionList = MutableStateFlow<List<Transcription>>(emptyList())
   val transcriptionList: StateFlow<List<Transcription>> = _transcriptionList.asStateFlow()
 
-  private val _isLoading = MutableStateFlow(true)
+  // General loading state, primarily for the initial transcription process
+  private val _isLoading = MutableStateFlow(false) // Changed default to false, set true during operations
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
   private val _lastAction = MutableStateFlow(LastAction.NONE)
@@ -106,15 +107,37 @@ constructor(
   val processingStep: StateFlow<ProcessingStep> = _processingStep.asStateFlow()
 
   var endAfterSave: Boolean = false
+  var saveAfterEnd: Boolean = true
 
-  private var cachedAudioUri: Uri? = null
-
+  private var cachedAudioUris = mutableStateListOf<Uri>()
   private var audioUris = mutableStateListOf<Uri>()
+
+  // --- New StateFlows for ModalBottomSheet Pager Control & Auto-Scroll ---
+  private val _isFirstOpenSinceTranscriptionUpdate = MutableStateFlow(true)
+  val isFirstOpenSinceTranscriptionUpdate: StateFlow<Boolean> = _isFirstOpenSinceTranscriptionUpdate.asStateFlow()
+
+  private val _justSummarized = MutableStateFlow(false)
+  val justSummarized: StateFlow<Boolean> = _justSummarized.asStateFlow()
+
+  private val _justTranslated = MutableStateFlow(false)
+  val justTranslated: StateFlow<Boolean> = _justTranslated.asStateFlow()
+
+  private val _isLoadingSummary = MutableStateFlow(false)
+  val isLoadingSummary: StateFlow<Boolean> = _isLoadingSummary.asStateFlow()
+
+  private val _isLoadingTranslation = MutableStateFlow(false)
+  val isLoadingTranslation: StateFlow<Boolean> = _isLoadingTranslation.asStateFlow()
+
+  // --- End of New StateFlows ---
 
   fun toggleBottomSheet(toggle: Boolean) {
     _isBottomSheetVisible.value = toggle
-    if (_isBottomSheetVisible.value == false) {
-      onSaveClick()
+    if (toggle) {
+      // When sheet becomes visible, reset flags that might have been true from a previous interaction
+      // if the content has been cleared or changed.
+      // The `isFirstOpenSinceTranscriptionUpdate` is handled more specifically below.
+    } else if(saveAfterEnd) {
+      onSaveClick() // Save when sheet is dismissed by user action (swipe, back press handled by ModalSheet)
     }
   }
 
@@ -122,10 +145,11 @@ constructor(
     viewModelScope.launch {
       settingsRepository.userPreferencesFlow.collect { userPreferences ->
         openAiService = openAiServiceFactory.create(userPreferences)
+        saveAfterEnd = userPreferences.autoSave
       }
     }
     viewModelScope.launch {
-      _isLoading.value = true
+      // _isLoading.value = true // Initial loading for list can be handled by UI if needed
       transcriptionRepository.allTranscriptions.collect { transcriptions ->
         _transcriptionList.value = transcriptions
         // _isLoading.value = false
@@ -133,7 +157,26 @@ constructor(
     }
   }
 
-  fun onAudioSelected(audioUri: Uri, context: Context) {
+  // Call this when a new transcription is successfully generated or loaded
+  fun markAsFirstOpen() {
+    _isFirstOpenSinceTranscriptionUpdate.value = true
+  }
+
+  // Call this from the Composable after the "first open" logic (e.g., scroll to page 0) is handled
+  fun markAsNotFirstOpen() {
+    _isFirstOpenSinceTranscriptionUpdate.value = false
+  }
+
+  fun clearJustSummarizedFlag() {
+    _justSummarized.value = false
+  }
+
+  fun clearJustTranslatedFlag() {
+    _justTranslated.value = false
+  }
+
+
+  fun onAudioSelected(audioUri: Uri) {
     audioUris += audioUri
     _totalAudioCount.value = audioUris.size
   }
@@ -145,26 +188,33 @@ constructor(
 
     viewModelScope.launch {
       _lastAction.value = LastAction.TRANSCRIPTION
+      // Reset states for a new transcription
+      _transcription.value = Transcription(id = 0, transcriptionText = "", summaryText = null, translationText = null, timestamp = "null")
+      _transcriptionError.value = null
+      _isLoading.value = true // Main loading for transcription process
+      markAsFirstOpen() // New transcription, so treat as first open for pager reset
+      clearJustSummarizedFlag()
+      clearJustTranslatedFlag()
+
       withContext(Dispatchers.Main) {
-        toggleBottomSheet(true)
-        _isLoading.value = true
-        _transcriptionError.value = null
+        toggleBottomSheet(true) // Ensure bottom sheet is visible
         _currentAudioIndex.value = 0
         _processingStep.value = ProcessingStep.PROCESSING
       }
 
       try {
-
         val audioFiles: List<File> =
           audioUris.mapIndexed { index, uri ->
+            if (!cachedAudioUris.contains(uri)) { // Add to cache only if not already there from a retry
+              cachedAudioUris.add(uri)
+            }
             val convertedFile = withContext(Dispatchers.IO) { convertToMP3(uri, context) }
-
             withContext(Dispatchers.Main) { _currentAudioIndex.value = index + 1 }
             convertedFile!!
           }
         withContext(Dispatchers.Main) {
           _processingStep.value = ProcessingStep.TRANSCRIPTION
-          _currentAudioIndex.value = 0 // Reset index for transcription
+          _currentAudioIndex.value = 0 // Reset index for transcription step
         }
 
         val transcriptionResults =
@@ -172,9 +222,6 @@ constructor(
             withContext(Dispatchers.Main) { _currentAudioIndex.value = index + 1 }
             withContext(Dispatchers.IO) { openAiService.whisper(audioFile) }
           }
-
-        Log.d(TAG, "Transcribing ${audioUris.size} audios...")
-        ""
 
         val successfulResults =
           transcriptionResults.mapIndexedNotNull { index, result ->
@@ -192,7 +239,7 @@ constructor(
               timestamp = formatTimestamp(System.currentTimeMillis()),
             )
           clearTempDir(context)
-          audioUris.clear()
+          audioUris.clear() // Clear after successful transcription
         } else {
           _transcriptionError.value =
             transcriptionResults.firstOrNull { it.isFailure }?.exceptionOrNull()?.message
@@ -200,16 +247,14 @@ constructor(
           Log.e(TAG, "Transcription failed: ${_transcriptionError.value}")
         }
 
-        withContext(Dispatchers.Main) {
-          _isLoading.value = false
-          toggleBottomSheet(true)
-        }
+        _isLoading.value = false // Transcription process finished
+        // toggleBottomSheet(true) // Already visible, no need to toggle again unless logic dictates
       } catch (e: Exception) {
-        // Handle error, e.g., update UI with error message
         Log.e(TAG, "Error transcribing audios", e)
+        _transcriptionError.value = e.message ?: "Error during transcription process"
         _isLoading.value = false
-
-        // ...
+        // audioUris.clear() // Decide if you want to clear URIs on general exception
+        // cachedAudioUris.clear() // Or keep them for retry
       }
     }
   }
@@ -219,18 +264,23 @@ constructor(
       Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
         type = "audio/*"
         addCategory(Intent.CATEGORY_OPENABLE)
-        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Allow multiple selections
+        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
       }
     launcher.launch(intent)
   }
 
   fun onSummarizeClick() {
+    if (_transcription.value.transcriptionText.isBlank() || _isLoadingSummary.value) {
+      return
+    }
     _lastAction.value = LastAction.SUMMARIZATION
     viewModelScope.launch {
       _isLoading.value = true
-      _transcriptionError.value = null
-      try {
+      _isLoadingSummary.value = true
+      _transcriptionError.value = null // Clear previous general errors, or use a specific summaryError
+      clearJustSummarizedFlag()
 
+      try {
         val summaryResult =
           withContext(Dispatchers.IO) {
             openAiService.summarize(transcription.value.transcriptionText)
@@ -239,25 +289,35 @@ constructor(
         summaryResult
           .onSuccess { text ->
             _transcription.value = _transcription.value.copy(summaryText = text)
+            _justSummarized.value = true // Signal that summary is newly available
             Log.d(TAG, "Summary: " + transcription.value.summaryText)
           }
           .onFailure { e ->
-            _transcriptionError.value = e.message ?: "Unknown summary error"
+            _transcriptionError.value = e.message ?: "Unknown summary error" // Or a specific summary error StateFlow
+
             Log.e(TAG, "Summary failed: ${e.message}", e)
           }
-
-        _isLoading.value = false
       } catch (e: Exception) {
+        _transcriptionError.value = e.message ?: "Error during summary process"
         Log.e(TAG, "Error summarizing text", e)
+      } finally {
+        _isLoading.value = false
+        _isLoadingSummary.value = false
       }
     }
   }
 
   fun onTranslateClick() {
+    if (_transcription.value.transcriptionText.isBlank() || _isLoadingTranslation.value) {
+      return
+    }
     _lastAction.value = LastAction.TRANSLATION
     viewModelScope.launch {
       _isLoading.value = true
-      _transcriptionError.value = null
+      _isLoadingTranslation.value = true
+      _transcriptionError.value = null // Clear previous general errors, or use a specific translationError
+      clearJustTranslatedFlag()
+
       try {
         val translateResult =
           withContext(Dispatchers.IO) {
@@ -267,28 +327,31 @@ constructor(
         translateResult
           .onSuccess { text ->
             _transcription.value = _transcription.value.copy(translationText = text)
+            _justTranslated.value = true // Signal that translation is newly available
+            Log.d(TAG, "Translation: " + transcription.value.translationText)
           }
           .onFailure { e ->
-            _transcriptionError.value = e.message ?: "Unknown translation error"
+            _transcriptionError.value = e.message ?: "Unknown translation error" // Or a specific translation error StateFlow
             Log.e(TAG, "Translation failed: ${e.message}", e)
           }
-
-        _isLoading.value = false
-
-        Log.d(TAG, "Summary: " + transcription.value.translationText)
       } catch (e: Exception) {
+        _transcriptionError.value = e.message ?: "Error during translation process"
         Log.e(TAG, "Error Translating text", e)
+      } finally {
+        _isLoading.value = false
+        _isLoadingTranslation.value = false
       }
     }
   }
 
   fun onSaveClick() {
     viewModelScope.launch {
-      if (_transcriptionError.value.isNullOrEmpty() && _transcription.value.transcriptionText.isNotBlank()) {
+      if (_transcription.value.transcriptionText.isNotBlank() && _transcriptionError.value == null) {
         transcriptionRepository.upsertTranscription(_transcription.value)
-        showToast("Saved")
+        showToast("Saved") // Consider making this a one-shot event for the UI to observe
       }
-      clearTranscription()
+
+      clearTranscriptionAndFlags()
       if (endAfterSave) {
         _closeApp.value = true
       }
@@ -299,19 +362,33 @@ constructor(
   }
 
   fun onRetryClick() {
+    _transcriptionError.value = null // Clear error before retrying
     viewModelScope.launch {
       when (_lastAction.value) {
         LastAction.TRANSCRIPTION -> {
-          if (cachedAudioUri == null) {
-            showToast("No audio cached, please start over.", true)
+          if (cachedAudioUris.isEmpty()) {
+            showToast("No audio cached, please select audio again.", true)
+            _isLoading.value = false // Ensure loading is false if nothing to retry
+            toggleBottomSheet(false) // Close sheet if retry isn't possible
+            clearTranscriptionAndFlags()
             return@launch
-          } else {
-            onAudioSelected(cachedAudioUri!!, context)
           }
+          // Re-populate audioUris from cache for transcription
+          audioUris.clear()
+          cachedAudioUris.forEach { uri ->
+            audioUris.add(uri) // Re-add to audioUris to be processed
+          }
+          _totalAudioCount.value = audioUris.size
+          // cachedAudioUris.clear() // Do not clear cache here, clear it on successful transcription or explicit clear
+          transcribeAudios()
         }
         LastAction.SUMMARIZATION -> onSummarizeClick()
         LastAction.TRANSLATION -> onTranslateClick()
-        LastAction.NONE -> showToast("No action to retry", true)
+        LastAction.NONE -> {
+          showToast("No action to retry", true)
+          toggleBottomSheet(false) // Close sheet if no action
+          clearTranscriptionAndFlags()
+        }
       }
     }
   }
@@ -326,27 +403,44 @@ constructor(
 
   fun onSampleClick() {
     viewModelScope.launch {
-      transcriptionRepository.upsertTranscription(
-        Transcription(
-          0,
-          "Sample".repeat(50),
-          "Sample".repeat(50),
-          "Sample".repeat(50),
-          timestamp = formatTimestamp(System.currentTimeMillis()),
-        )
+      val sample = Transcription(
+        0,
+        "This is a sample transcription text. It can be quite long to demonstrate the scrolling behavior within the card. ".repeat(10),
+        "This is a concise summary of the sample transcription. ".repeat(3),
+        "Ceci est une traduction exemplaire du texte de transcription. ".repeat(3),
+        timestamp = formatTimestamp(System.currentTimeMillis()),
       )
+      transcriptionRepository.upsertTranscription(sample)
+      // To also display it in the bottom sheet immediately:
+      // _transcription.value = sample
+      // markAsFirstOpen()
+      // toggleBottomSheet(true)
     }
   }
 
-  fun clearTranscription() {
+  // Renamed for clarity and to include resetting related flags
+  fun clearTranscriptionAndFlags() {
     _transcription.value =
       _transcription.value.copy(
+        id = 0, // Reset ID for a new transcription object
         transcriptionText = "",
         summaryText = null,
         translationText = null,
         timestamp = "null",
       )
+    _transcriptionError.value = null
+    _lastAction.value = LastAction.NONE
+    audioUris.clear()
+    _totalAudioCount.value = 0
+    _currentAudioIndex.value = 0
+    markAsFirstOpen()
+    clearJustSummarizedFlag()
+    clearJustTranslatedFlag()
+    _isLoading.value = false
+    _isLoadingSummary.value = false
+    _isLoadingTranslation.value = false
   }
+
 
   fun showToast(text: String, long: Boolean = false) {
     Toast.makeText(context, text, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
@@ -354,14 +448,15 @@ constructor(
 
   fun dismissDialog() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-      visiblePermissionDialogQueue.removeFirst()
+      if (visiblePermissionDialogQueue.isNotEmpty()) visiblePermissionDialogQueue.removeFirst()
     } else {
-      visiblePermissionDialogQueue.removeAt(0)
+      if (visiblePermissionDialogQueue.isNotEmpty()) visiblePermissionDialogQueue.removeAt(0)
     }
   }
 
   fun onPermissionResult(permission: String, isGranted: Boolean) {
     if (!isGranted && !visiblePermissionDialogQueue.contains(permission)) {
+      // Consider if you want to show dialog only for specific permissions
       visiblePermissionDialogQueue.add(permission)
     }
   }

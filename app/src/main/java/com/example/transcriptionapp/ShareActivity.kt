@@ -144,7 +144,7 @@ class ShareActivity : ComponentActivity() {
           Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
           // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
 
-          bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
+          bottomSheetViewModel.onAudioSelected(Uri.fromFile(file))
         }
       }
     } else {
@@ -154,7 +154,7 @@ class ShareActivity : ComponentActivity() {
         Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
         // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
 
-        bottomSheetViewModel.onAudioSelected(Uri.fromFile(file), this)
+        bottomSheetViewModel.onAudioSelected(Uri.fromFile(file))
       }
     }
   }

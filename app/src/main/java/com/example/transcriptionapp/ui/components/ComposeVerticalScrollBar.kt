@@ -1,8 +1,9 @@
-package com.example.transcriptionapp.com.example.transcriptionapp.ui.components
+package com.example.transcriptionapp.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -22,9 +23,11 @@ fun Modifier.verticalScrollbar(
     scrollState: ScrollState,
     scrollBarWidth: Dp = 4.dp,
     minScrollBarHeight: Dp = 5.dp,
-    scrollBarColor: Color = Color.Gray,
-    cornerRadius: Dp = 2.dp
+    scrollBarColor: Color? = null,
+    cornerRadius: Dp = 2.dp,
 ): Modifier = composed {
+    val resolvedScrollBarColor = scrollBarColor ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+
     val targetAlpha = if (scrollState.isScrollInProgress) 0.7f else 0f
     val duration = if (scrollState.isScrollInProgress) 150 else 500
 
@@ -45,7 +48,7 @@ fun Modifier.verticalScrollbar(
             val scrollBarOffsetY: Float = scrollState.value + (visibleHeight - scrollBarHeight) * scrollPercent
 
             drawRoundRect(
-                color = scrollBarColor,
+                resolvedScrollBarColor,
                 topLeft = Offset(this.size.width - scrollBarWidth.toPx(), scrollBarOffsetY),
                 size = Size(scrollBarWidth.toPx(), scrollBarHeight),
                 alpha = alpha,

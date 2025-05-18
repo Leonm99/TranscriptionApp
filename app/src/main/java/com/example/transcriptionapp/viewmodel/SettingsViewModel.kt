@@ -1,6 +1,5 @@
 package com.example.transcriptionapp.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
@@ -19,7 +18,6 @@ import javax.inject.Inject
 private const val TAG = "SettingsViewModel"
 
 enum class DialogType {
-  API,
   LANGUAGE,
   MODEL,
   DELETE,
@@ -43,21 +41,16 @@ constructor(
   private val _showDialog = MutableStateFlow(false)
   var showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
-  private val _dialogType = MutableStateFlow(DialogType.API)
+  private val _dialogType = MutableStateFlow(DialogType.MODEL)
   var dialogType: StateFlow<DialogType> = _dialogType.asStateFlow()
 
-  fun showDialog(type: DialogType = DialogType.API) {
+  fun showDialog(type: DialogType = DialogType.MODEL) {
     _dialogType.value = type
     _showDialog.value = true
   }
 
   fun hideDialog() {
     _showDialog.value = false
-  }
-
-  fun setUserApiKey(key: String) {
-    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setUserApiKey(key) }
-    Log.d(TAG, "User API Key: $key")
   }
 
   fun deleteDatabase() {
@@ -72,6 +65,9 @@ constructor(
     viewModelScope.launch(Dispatchers.IO) { settingsRepository.setModel(model) }
   }
 
+  fun setAutoSave(autoSave: Boolean) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setAutoSave(autoSave) }
+  }
   fun setMockApi(mockApi: Boolean) {
     viewModelScope.launch(Dispatchers.IO) { settingsRepository.setMockApi(mockApi) }
   }

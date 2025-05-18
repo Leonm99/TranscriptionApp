@@ -6,11 +6,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,9 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.alorma.compose.settings.ui.SettingsCheckbox
 import com.alorma.compose.settings.ui.SettingsMenuLink
 import com.alorma.compose.settings.ui.SettingsSwitch
-import com.example.transcriptionapp.ui.components.ApiKeyDialog
 import com.example.transcriptionapp.ui.components.DeleteDialog
 import com.example.transcriptionapp.ui.components.LanguageDialog
 import com.example.transcriptionapp.ui.components.ModelDialog
@@ -66,13 +66,6 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
     )
 
     SettingsMenuLink(
-      title = { Text(text = "OpenAI API Key") },
-      subtitle = { Text(text = settings.userApiKey) },
-      onClick = { viewModel.showDialog(DialogType.API) },
-      icon = { Icon(imageVector = Icons.Default.Key, contentDescription = "API Key") },
-    )
-
-    SettingsMenuLink(
       title = { Text(text = "Language") },
       subtitle = { Text(text = settings.selectedLanguage) },
       onClick = { viewModel.showDialog(DialogType.LANGUAGE) },
@@ -85,6 +78,15 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
       onClick = { viewModel.showDialog(DialogType.MODEL) },
       icon = { Icon(imageVector = Icons.Default.Bolt, contentDescription = "Model") },
     )
+
+    SettingsCheckbox(
+      state = settings.autoSave,
+      title = { Text(text = "Autosave") },
+      subtitle = { Text(text = "Save transcriptions automatically.") },
+      onCheckedChange = { viewModel.setAutoSave(it) },
+      icon = { Icon(imageVector = Icons.Default.AutoMode, contentDescription = "AutoSave") },
+    )
+
 
     SettingsSwitch(
       state = settings.mockApi,
@@ -115,7 +117,6 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
 
   if (showDialog) {
     when (dialogType) {
-      DialogType.API -> ApiKeyDialog(viewModel, settings.userApiKey)
       DialogType.LANGUAGE -> LanguageDialog(viewModel, settings.selectedLanguage)
       DialogType.MODEL -> ModelDialog(viewModel, settings.selectedModel)
       DialogType.DELETE -> DeleteDialog(viewModel)

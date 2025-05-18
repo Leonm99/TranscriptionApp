@@ -17,9 +17,7 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Us
       }
     }
 
-  suspend fun setUserApiKey(apiKey: String) {
-    dataStore.updateData { currentSettings -> currentSettings.copy(userApiKey = apiKey) }
-  }
+
 
   suspend fun setLanguage(language: String) {
     dataStore.updateData { currentSettings -> currentSettings.copy(selectedLanguage = language) }
@@ -27,6 +25,10 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Us
 
   suspend fun setModel(model: String) {
     dataStore.updateData { currentSettings -> currentSettings.copy(selectedModel = model) }
+  }
+
+  suspend fun setAutoSave(autoSave: Boolean) {
+    dataStore.updateData { currentSettings -> currentSettings.copy(autoSave = autoSave) }
   }
 
   suspend fun setMockApi(mockApi: Boolean) {

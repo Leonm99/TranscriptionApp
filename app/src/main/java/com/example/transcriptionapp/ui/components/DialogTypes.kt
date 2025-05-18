@@ -10,9 +10,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -22,44 +20,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.R
 import com.example.transcriptionapp.viewmodel.SettingsViewModel
-
-@Composable
-fun ApiKeyDialog(viewModel: SettingsViewModel, userApiKey: String) {
-  val userInput = rememberSaveable { mutableStateOf("") }
-  LaunchedEffect(key1 = userApiKey) {
-    if (!userApiKey.isBlank() && userInput.value.isBlank()) {
-      userInput.value = userApiKey
-    }
-  }
-  AlertDialog(
-    onDismissRequest = { viewModel.hideDialog() },
-    title = { Text(text = "API Key") },
-    text = {
-      TextField(
-        value = userInput.value,
-        onValueChange = { userInput.value = it },
-        label = { Text("Enter text") },
-        maxLines = 5,
-      )
-    },
-    confirmButton =
-      if (userInput.value.isEmpty()) {
-        { TextButton(onClick = { viewModel.hideDialog() }) { Text(text = "Cancel") } }
-      } else {
-        {
-          TextButton(
-            onClick = {
-              viewModel.setUserApiKey(userInput.value)
-              viewModel.hideDialog()
-            }
-          ) {
-            Text(text = "Select")
-          }
-        }
-      },
-    dismissButton = { TextButton(onClick = { userInput.value = "" }) { Text(text = "Clear") } },
-  )
-}
 
 @Composable
 fun LanguageDialog(viewModel: SettingsViewModel, selectedLanguageKey: String?) {
@@ -160,7 +120,8 @@ fun PermissionDialog(
           fontWeight = FontWeight.Bold,
           textAlign = TextAlign.Center,
           modifier =
-            Modifier.fillMaxWidth()
+            Modifier
+              .fillMaxWidth()
               .clickable {
                 if (isPermanentlyDeclined) {
                   onGoToAppSettingsClick()

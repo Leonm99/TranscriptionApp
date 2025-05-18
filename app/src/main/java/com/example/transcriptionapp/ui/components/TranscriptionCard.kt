@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -43,7 +45,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
-import com.example.transcriptionapp.com.example.transcriptionapp.ui.components.verticalScrollbar
 import com.example.transcriptionapp.ui.theme.SpacingMedium
 import com.example.transcriptionapp.ui.theme.SpacingSmall
 import com.example.transcriptionapp.viewmodel.formatTimestamp
@@ -53,8 +54,10 @@ import eu.wewox.modalsheet.ExperimentalSheetApi
 @Composable
 @Preview
 fun TranscriptionCardPreview() {
+  val previewPagerState = rememberPagerState(pageCount = { 1 })
 
   TranscriptionCard(
+    pagerState = previewPagerState,
     transcription =
       Transcription(
         0,
@@ -73,6 +76,7 @@ fun TranscriptionCardPreview() {
 @Composable
 fun TranscriptionCard(
   modifier: Modifier = Modifier,
+  pagerState: PagerState,
   transcription: Transcription,
   onCopyClicked: (String) -> Unit,
   isSelected: Boolean = false,
@@ -81,11 +85,7 @@ fun TranscriptionCard(
   errorMessage: String? = null,
 ) {
 
-  val pageCount =
-    1 +
-      (if (transcription.summaryText != null) 1 else 0) +
-      (if (transcription.translationText != null) 1 else 0)
-  val pagerState = rememberPagerState(pageCount = { pageCount })
+
   val titleText =
     when (pagerState.currentPage) {
       0 -> "Transcription"
@@ -113,7 +113,9 @@ fun TranscriptionCard(
   ) {
     if (errorMessage != null) {
       Column(
-        modifier = Modifier.fillMaxWidth().padding(15.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(15.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
       ) {
@@ -142,17 +144,23 @@ fun TranscriptionCard(
     } else {
       Box(contentAlignment = Alignment.BottomCenter) {
         Column(
-          modifier = Modifier.fillMaxWidth().padding(horizontal = SpacingMedium),
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SpacingMedium),
           verticalArrangement = Arrangement.Top,
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = SpacingSmall),
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(top = 4.dp, bottom = SpacingSmall),
             verticalAlignment = Alignment.CenterVertically, // Centers the items vertically
             horizontalArrangement = Arrangement.SpaceBetween,
           ) {
             Column(
-              modifier = Modifier.wrapContentSize().offset(y = 11.dp),
+              modifier = Modifier
+                .wrapContentSize()
+                .offset(y = 11.dp),
               horizontalAlignment = Alignment.Start,
             ) {
               Text(
@@ -178,14 +186,17 @@ fun TranscriptionCard(
             } else {
               IconButton(
                 onClick = {
-                  onCopyClicked(
-                    if (pagerState.currentPage == 0) transcription.transcriptionText
-                    else if (pagerState.currentPage == 1 && transcription.summaryText != null)
-                      transcription.summaryText
-                    else transcription.translationText ?: "WOW HOW DID THIS HAPPEN?!"
-                  )
-                },
-                modifier = Modifier.size(25.dp).padding(top=4.dp),
+                  val currentText = when (pagerState.currentPage) {
+                    0 -> transcription.transcriptionText
+                    1 -> if (!transcription.summaryText.isNullOrEmpty()) transcription.summaryText else transcription.translationText
+                    2 -> transcription.translationText
+                    else -> ""
+                  }
+                  currentText?.let { onCopyClicked(it) }
+            },
+                modifier = Modifier
+                  .size(25.dp)
+                  .padding(top = 4.dp),
               ) {
                 Icon(
                   Icons.Filled.ContentCopy,
@@ -196,72 +207,66 @@ fun TranscriptionCard(
             }
           }
 
-          HorizontalPager(
+          HorizontalPager( // Use the passed pagerState
             state = pagerState,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp, max = 250.dp).padding(top = 4.dp),
-          ) { page ->
+            modifier = Modifier
+              .fillMaxWidth()
+              .heightIn(min = 50.dp, max = 250.dp) // Or your desired height
+              .padding(top = 4.dp),
+          ) { page -> // page here is the index
             val scrollState = rememberScrollState()
+            val currentDisplayTranscription = transcription // To avoid confusion with outer scope
 
-            Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-              if (page == 0) {
-                Text(
-                  modifier =
-                    Modifier.fillMaxWidth()
-                      .wrapContentHeight()
-                      .nestedScroll(rememberNestedScrollInteropConnection())
-                      .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState),
-                  text = transcription.transcriptionText,
-                  textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-              } else if (page == 1 && !transcription.summaryText.isNullOrEmpty()) {
-                Text(
-                  modifier =
-                    Modifier.fillMaxWidth()
-                      .wrapContentHeight()
-                      .nestedScroll(rememberNestedScrollInteropConnection())
-                      .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState),
-                  text = transcription.summaryText,
-                  textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-              } else if (
-                page == (if (!transcription.summaryText.isNullOrEmpty()) 2 else 1) &&
-                  !transcription.translationText.isNullOrEmpty()
-              ) {
-                val scrollState = rememberScrollState()
+            val textToShow = when (page) {
+              0 -> currentDisplayTranscription.transcriptionText
+              1 -> if (!currentDisplayTranscription.summaryText.isNullOrEmpty()) {
+                currentDisplayTranscription.summaryText
+              } else { // Fallback to translation if summary is page 1 but empty
+                currentDisplayTranscription.translationText
+              }
+              2 -> currentDisplayTranscription.translationText
+              else -> "" // Should not happen if pageCount is correct
+            }
 
-                Text(
-                  modifier =
-                    Modifier.fillMaxWidth()
-                      .wrapContentHeight()
-                      .nestedScroll(rememberNestedScrollInteropConnection())
-                      .verticalScroll(scrollState)
-                      .verticalScrollbar(scrollState),
-                  text = transcription.translationText,
-                  textAlign = TextAlign.Start,
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
+            if (!textToShow.isNullOrEmpty()) {
+              Text(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .wrapContentHeight()
+                  .nestedScroll(rememberNestedScrollInteropConnection())
+                  .verticalScroll(scrollState)
+                  .verticalScrollbar(scrollState),
+                text = textToShow,
+                textAlign = TextAlign.Start,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+              )
+            } else {
+              // Optional: Show a placeholder if text is null/empty for a page
+              Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Content not available.", style = MaterialTheme.typography.bodyMedium)
               }
             }
           }
-          if (pageCount > 1) {
+
+          if (pagerState.pageCount > 1) { // Use pagerState.pageCount
             Row(
-              Modifier.wrapContentHeight().fillMaxWidth().padding(bottom = 5.dp, top = 5.dp),
+              Modifier
+                .wrapContentHeight()
+                .fillMaxWidth()
+                .padding(bottom = 5.dp, top = 5.dp),
               horizontalArrangement = Arrangement.Center,
             ) {
               repeat(pagerState.pageCount) { iteration ->
                 val color =
-                  if (pagerState.currentPage == iteration)
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                  else MaterialTheme.colorScheme.onPrimary
+                  if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.onPrimaryContainer
+                  else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f) // Dim inactive
                 Box(
-                  modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(5.dp)
+                  modifier = Modifier
+                    .padding(2.dp)
+                    .clip(CircleShape)
+                    .background(color)
+                    .size(8.dp) // Slightly bigger dots
                 )
               }
             }
