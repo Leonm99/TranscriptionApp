@@ -59,9 +59,14 @@ dependencies {
 
   implementation(libs.retrofit)
   implementation(libs.convert.gson)
-  implementation(libs.okhttp)
-  implementation(libs.logging.inceptor)
-  implementation(libs.ktor.client.android)
+
+  implementation(libs.ktor.client.core)
+  implementation(libs.ktor.client.okhttp)
+  implementation(libs.ktor.client.plugins)
+  implementation(libs.ktor.client.content.negotiation)
+  implementation(libs.ktor.client.logging)
+  implementation(libs.ktor.serialization.kotlinx.json)
+
 
   implementation(libs.androidx.lifecycle.viewmodel.compose)
 
@@ -82,6 +87,7 @@ dependencies {
 
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.functions)
+  implementation(libs.firebase.ai)
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)

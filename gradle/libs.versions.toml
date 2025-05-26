@@ -1,10 +1,11 @@
 [versions]
 advancedBottomsheetMaterial3 = "0.1.0"
 agp = "8.10.0-alpha08"
-datastorePreferences = "1.1.6"
+datastorePreferences = "1.1.7"
+
 
 ffmpegKitFull = "6.0-2.LTS"
-firebaseBom = "33.13.0"
+firebaseBom = "33.14.0"
 hiltAndroid = "2.55"
 kotlinxSerializationJson = "1.7.3"
 kotlin = "2.1.10"
@@ -13,9 +14,15 @@ junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 ktorClientAndroid = "3.0.3"
+ktorClientContentNegotiation = "2.3.0"
+ktorClientCore = "2.3.7"
+ktorClientLogging = "2.2.4"
+ktorClientOkhttp = "2.3.7"
+ktorClientPlugins = "2.3.7"
+ktorSerializationKotlinxJson = "2.3.4"
 lifecycleRuntimeKtx = "2.9.0"
 activityCompose = "1.10.1"
-composeBom = "2025.05.00"
+composeBom = "2025.05.01"
 material = "1.12.0"
 
 modalsheet = "0.7.0"
@@ -25,8 +32,6 @@ ksp = "2.1.10-1.0.29"
 
 
 converter-gson = "2.9.0"
-okhttp = "4.12.0"
-logging-interceptor = "4.11.0"
 compose-settings = "2.6.0"
 lifecycleViewmodelCompose = "2.9.0"
 materialIconsExtendedVersion = "1.7.8"
@@ -45,11 +50,17 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx"
 
 androidx-ui-text-google-fonts = { module = "androidx.compose.ui:ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 ffmpeg-kit-full = { module = "com.arthenica:ffmpeg-kit-full", version.ref = "ffmpegKitFull" }
+firebase-ai = { module = "com.google.firebase:firebase-ai"}
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-functions = { module = "com.google.firebase:firebase-functions" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroid" }
-ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroid" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktorClientLogging" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorClientOkhttp" }
+ktor-client-plugins = { module = "io.ktor:ktor-client-plugins", version.ref = "ktorClientPlugins" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 materialIconsExtended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtendedVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -72,8 +83,6 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 modalsheet = { module = "io.github.oleksandrbalan:modalsheet", version.ref = "modalsheet" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 convert-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converter-gson" }
-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
-logging-inceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "logging-interceptor" }
 
 
 

@@ -30,8 +30,5 @@ class MockOpenAiHandler() : OpenAiService {
     return true
   }
 
-  override suspend fun checkApiKey(): Boolean {
-    delay(3000)
-    return true
-  }
+
 }

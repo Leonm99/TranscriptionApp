@@ -315,7 +315,7 @@ constructor(
     viewModelScope.launch {
       _isLoading.value = true
       _isLoadingTranslation.value = true
-      _transcriptionError.value = null // Clear previous general errors, or use a specific translationError
+      _transcriptionError.value = null
       clearJustTranslatedFlag()
 
       try {

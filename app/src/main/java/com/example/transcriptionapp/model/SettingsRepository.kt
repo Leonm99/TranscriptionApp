@@ -1,9 +1,9 @@
 package com.example.transcriptionapp.model
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.io.IOException
 import javax.inject.Inject
 
 class SettingsRepository @Inject constructor(private val dataStore: DataStore<UserPreferences>) {

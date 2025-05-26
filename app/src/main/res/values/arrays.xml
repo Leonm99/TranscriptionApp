@@ -201,10 +201,7 @@
     </string-array>
 
     <string-array name="string_array_models">
+        <item>gpt-4.1-nano</item>
         <item>gpt-4o-mini</item>
-        <item>gpt-4o</item>
-        <item>gpt-4-turbo</item>
-        <item>gpt-4</item>
-        <item>gpt-3.5-turbo</item>
     </string-array>
 </resources>
