@@ -5,9 +5,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.dataStoreFile
 import androidx.room.Room
-import com.example.transcriptionapp.api.MockOpenAiHandler
-import com.example.transcriptionapp.api.FirebaseApiClient
-import com.example.transcriptionapp.api.OpenAiServiceFactory
+import com.example.transcriptionapp.api.MockApiHandler
+import com.example.transcriptionapp.api.ApiServiceFactory
+import com.example.transcriptionapp.api.UnifiedApiClient
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDatabase
@@ -85,28 +85,28 @@ object HiltModule {
 
   @Provides
   @Singleton
-  fun provideFirebaseApiClient(
+  fun provideUnifiedApiClient(
     settingsRepository: SettingsRepository,
     @ApplicationContext context: Context,
-  ): FirebaseApiClient {
-    return FirebaseApiClient(settingsRepository, context)
+  ): UnifiedApiClient {
+    return UnifiedApiClient(settingsRepository, context)
   }
 
   @Provides
   @Singleton
-  fun provideMockOpenAiHandler(): MockOpenAiHandler {
-    return MockOpenAiHandler()
+  fun provideMockApiHandler(): MockApiHandler {
+    return MockApiHandler()
   }
 
   @Provides
   @Singleton
-  fun provideOpenAiServiceFactory(
-   firebaseApiClient: FirebaseApiClient,
-    mockOpenAiHandler: MockOpenAiHandler,
-  ): OpenAiServiceFactory {
-    return OpenAiServiceFactory(
-      firebaseApiClient = firebaseApiClient,
-      mockOpenAiHandler = mockOpenAiHandler,
+  fun provideApiServiceFactory(
+   UnifiedApiClient: UnifiedApiClient,
+    mockApiHandler: MockApiHandler,
+  ): ApiServiceFactory {
+    return ApiServiceFactory(
+      UnifiedApiClient = UnifiedApiClient,
+      MockApiHandler = mockApiHandler,
     )
   }
 

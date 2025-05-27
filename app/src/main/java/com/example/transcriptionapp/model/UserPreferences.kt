@@ -11,10 +11,16 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.util.Base64
 
+enum class ProviderType {
+  OPEN_AI,
+  GEMINI
+}
+
 @Serializable
 data class UserPreferences(
   val selectedLanguage: String = "English",
-  val selectedModel: String = "gpt-4o-mini",
+  val selectedTranscriptionProvider: ProviderType = ProviderType.OPEN_AI,
+  val selectedSummaryProvider: ProviderType = ProviderType.OPEN_AI,
   val autoSave: Boolean = true,
   val mockApi: Boolean = false,
   val dynamicColor: Boolean = true

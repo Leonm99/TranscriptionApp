@@ -23,8 +23,12 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Us
     dataStore.updateData { currentSettings -> currentSettings.copy(selectedLanguage = language) }
   }
 
-  suspend fun setModel(model: String) {
-    dataStore.updateData { currentSettings -> currentSettings.copy(selectedModel = model) }
+  suspend fun setTranscriptionProvider(provider: ProviderType) {
+    dataStore.updateData { currentSettings -> currentSettings.copy(selectedTranscriptionProvider = provider) }
+  }
+
+  suspend fun setSummaryProvider(provider: ProviderType) {
+    dataStore.updateData { currentSettings -> currentSettings.copy(selectedSummaryProvider = provider) }
   }
 
   suspend fun setAutoSave(autoSave: Boolean) {

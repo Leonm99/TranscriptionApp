@@ -19,7 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.R
+import com.example.transcriptionapp.model.ProviderType
 import com.example.transcriptionapp.viewmodel.SettingsViewModel
+
 
 @Composable
 fun LanguageDialog(viewModel: SettingsViewModel, selectedLanguageKey: String?) {
@@ -49,22 +51,57 @@ fun LanguageDialog(viewModel: SettingsViewModel, selectedLanguageKey: String?) {
 }
 
 @Composable
-fun ModelDialog(viewModel: SettingsViewModel, selectedModelKey: String) {
-  val userSelectedModel = rememberSaveable { mutableStateOf(selectedModelKey) }
-  val items = stringArrayResource(id = R.array.string_array_models)
+fun TranscriptionDialog(viewModel: SettingsViewModel, selectedProvider: ProviderType) {
+  val userSelectedProvider = rememberSaveable { mutableStateOf(selectedProvider) }
+  val items = ProviderType.entries.map { it }
 
   AlertDialog(
     onDismissRequest = { viewModel.hideDialog() },
-    title = { Text(text = "Models") },
+    title = { Text(text = "Providers") },
     text = {
       LazyColumn {
-        items(items) { model ->
+        items(items) { provider ->
           LabelRadioButton(
-            item = model,
-            isSelected = model == userSelectedModel.value,
+            item = provider.toString(),
+            isSelected = provider == userSelectedProvider.value,
             onClick = {
-              userSelectedModel.value = model
-              viewModel.setSelectedModel(model)
+              userSelectedProvider.value = if (provider.toString() == "OPEN_AI") {
+                ProviderType.OPEN_AI
+              } else {
+                ProviderType.GEMINI
+              }
+              viewModel.setSelectedTranscriptionProvider(provider)
+            },
+          )
+        }
+      }
+    },
+    confirmButton = { TextButton(onClick = { viewModel.hideDialog() }) { Text(text = "Back") } },
+    dismissButton = {},
+  )
+}
+
+@Composable
+fun SummaryDialog(viewModel: SettingsViewModel, selectedProvider: ProviderType) {
+  val userSelectedProvider = rememberSaveable { mutableStateOf(selectedProvider) }
+  val items = ProviderType.entries.map { it }
+
+  AlertDialog(
+    onDismissRequest = { viewModel.hideDialog() },
+    title = { Text(text = "Providers") },
+    text = {
+      LazyColumn {
+        items(items) { provider ->
+          LabelRadioButton(
+            item = provider.toString(),
+            isSelected = provider == userSelectedProvider.value,
+            onClick = {
+              userSelectedProvider.value = if (provider.toString() == "OPEN_AI") {
+                ProviderType.OPEN_AI
+              } else {
+                ProviderType.GEMINI
+              }
+              viewModel.setSelectedSummaryProvider(provider)
             },
           )
         }

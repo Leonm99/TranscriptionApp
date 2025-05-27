@@ -3,6 +3,7 @@ package com.example.transcriptionapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
+import com.example.transcriptionapp.model.ProviderType
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.UserPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +20,8 @@ private const val TAG = "SettingsViewModel"
 
 enum class DialogType {
   LANGUAGE,
-  MODEL,
+  TRANSCRIPTION_PROVIDER,
+  SUMMARIZATION_PROVIDER,
   DELETE,
 }
 
@@ -41,10 +43,10 @@ constructor(
   private val _showDialog = MutableStateFlow(false)
   var showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
-  private val _dialogType = MutableStateFlow(DialogType.MODEL)
+  private val _dialogType = MutableStateFlow(DialogType.LANGUAGE)
   var dialogType: StateFlow<DialogType> = _dialogType.asStateFlow()
 
-  fun showDialog(type: DialogType = DialogType.MODEL) {
+  fun showDialog(type: DialogType = DialogType.LANGUAGE) {
     _dialogType.value = type
     _showDialog.value = true
   }
@@ -61,8 +63,12 @@ constructor(
     viewModelScope.launch(Dispatchers.IO) { settingsRepository.setLanguage(language) }
   }
 
-  fun setSelectedModel(model: String) {
-    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setModel(model) }
+  fun setSelectedTranscriptionProvider(provider: ProviderType) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setTranscriptionProvider(provider) }
+  }
+
+  fun setSelectedSummaryProvider(provider: ProviderType) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setSummaryProvider(provider) }
   }
 
   fun setAutoSave(autoSave: Boolean) {

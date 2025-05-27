@@ -10,8 +10,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.api.OpenAiService
-import com.example.transcriptionapp.api.OpenAiServiceFactory
+import com.example.transcriptionapp.api.ApiService
+import com.example.transcriptionapp.api.ApiServiceFactory
 import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.model.SettingsRepository
@@ -52,11 +52,11 @@ class BottomSheetViewModel
 constructor(
   private val settingsRepository: SettingsRepository,
   private val transcriptionRepository: TranscriptionRepository,
-  private val openAiServiceFactory: OpenAiServiceFactory,
+  private val ApiServiceFactory: ApiServiceFactory,
   @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-  private lateinit var openAiService: OpenAiService
+  private lateinit var ApiService: ApiService
 
   private val _transcription =
     MutableStateFlow(
@@ -144,7 +144,7 @@ constructor(
   init {
     viewModelScope.launch {
       settingsRepository.userPreferencesFlow.collect { userPreferences ->
-        openAiService = openAiServiceFactory.create(userPreferences)
+        ApiService = ApiServiceFactory.create(userPreferences)
         saveAfterEnd = userPreferences.autoSave
       }
     }
@@ -220,7 +220,7 @@ constructor(
         val transcriptionResults =
           audioFiles.mapIndexed { index, audioFile ->
             withContext(Dispatchers.Main) { _currentAudioIndex.value = index + 1 }
-            withContext(Dispatchers.IO) { openAiService.whisper(audioFile) }
+            withContext(Dispatchers.IO) { ApiService.transcribe(audioFile) }
           }
 
         val successfulResults =
@@ -283,7 +283,7 @@ constructor(
       try {
         val summaryResult =
           withContext(Dispatchers.IO) {
-            openAiService.summarize(transcription.value.transcriptionText)
+            ApiService.summarize(transcription.value.transcriptionText)
           }
 
         summaryResult
@@ -321,7 +321,7 @@ constructor(
       try {
         val translateResult =
           withContext(Dispatchers.IO) {
-            openAiService.translate(transcription.value.transcriptionText)
+            ApiService.translate(transcription.value.transcriptionText)
           }
 
         translateResult
