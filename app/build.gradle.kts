@@ -23,12 +23,19 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  buildFeatures {
+    buildConfig = true
+  }
+
   buildTypes {
     release {
       isMinifyEnabled = true
       isShrinkResources = true
 
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+    }
+    debug {
+
     }
   }
   compileOptions {
@@ -88,6 +95,9 @@ dependencies {
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.functions)
   implementation(libs.firebase.ai)
+  implementation(libs.firebase.appcheck.playintegrity)
+  implementation(libs.firebase.appcheck.debug)
+  implementation(libs.firebase.appcheck.ktx)
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)

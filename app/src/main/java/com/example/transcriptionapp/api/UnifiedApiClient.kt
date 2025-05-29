@@ -11,6 +11,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
+import com.google.firebase.appcheck.FirebaseAppCheck // Import AppCheck
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -19,6 +20,7 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.client.request.header // Import for adding headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -32,6 +34,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await // For converting Task to suspend function
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -42,7 +45,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-// Common Data Classes (previously in GeminiApiClient.kt)
+// ... (Your data classes ApiError, ChatMessage, etc. remain the same) ...
 @Serializable
 data class ChatMessage(val role: String, val content: String)
 
@@ -66,39 +69,20 @@ data class ApiChatCompletionResponse(
 @Serializable
 data class ApiError(val message: String, val type: String?, val param: String?, val code: String?)
 
-// Common ApiService Interface (previously in GeminiApiClient.kt)
 interface ApiService {
-    /**
-     * Transcribes the given audio file.
-     * @param audioFile The audio file to transcribe.
-     * @param useGeminiSdk If true, uses the Firebase Gemini SDK for transcription. Otherwise, uses the HTTP endpoint.
-     * @return A Result containing the transcription text or an Exception.
-     */
     suspend fun transcribe(audioFile: File): Result<String>
-
-    /**
-     * Summarizes the given text.
-     * @param text The text to summarize.
-     * @param useGeminiSdk If true, uses the Firebase Gemini SDK for summarization. Otherwise, uses the HTTP endpoint.
-     * @return A Result containing the summarized text or an Exception.
-     */
     suspend fun summarize(text: String): Result<String>
-
-    /**
-     * Translates the given text.
-     * @param text The text to translate.
-     * @param useGeminiSdk If true, uses the Firebase Gemini SDK for translation. Otherwise, uses the HTTP endpoint.
-     * @return A Result containing the translated text or an Exception.
-     */
     suspend fun translate(text: String): Result<String>
 }
+
 
 class UnifiedApiClient @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val context: Context
 ) : ApiService {
 
-    // Configure Ktor HttpClient with OkHttp engine (from OpenaiApiClient)
+    private val firebaseAppCheck: FirebaseAppCheck = FirebaseAppCheck.getInstance() // Get AppCheck instance
+
     private val ktorHttpClient = HttpClient(OkHttp) {
         engine {
             config {
@@ -120,18 +104,18 @@ class UnifiedApiClient @Inject constructor(
                     Log.v("KtorLogger", message)
                 }
             }
-            level = LogLevel.INFO
+            level = LogLevel.INFO // Consider LogLevel.ALL for debugging App Check issues
         }
     }
 
-    private var firebaseFunctionHttpUrl: String = "https://call-openai-python-wb7tbqxrta-ew.a.run.app" //
-    private var language: String = "English" //
+    private var firebaseFunctionHttpUrl: String = "https://call-openai-python-wb7tbqxrta-ew.a.run.app"
+    private var language: String = "English"
     private var transcriptionProvider: ProviderType = ProviderType.OPEN_AI
     private var summarizationProvider: ProviderType = ProviderType.OPEN_AI
-    private var openAiModelForChat: String = "gpt-4o-mini" // Default OpenAI model for chat via HTTP
-    private val geminiModelName: String = "gemini-2.0-flash-lite-001" // Default Gemini model
+    private var openAiModelForChat: String = "gpt-4o-mini"
+    private val geminiModelName: String = "gemini-2.0-flash-lite-001" // Gemini Vertex AI model
 
-    private val jsonParser = Json { ignoreUnknownKeys = true; isLenient = true } //
+    private val jsonParser = Json { ignoreUnknownKeys = true; isLenient = true }
 
     init {
         CoroutineScope(Dispatchers.IO).launch {
@@ -139,7 +123,8 @@ class UnifiedApiClient @Inject constructor(
                 language = userPreferences.selectedLanguage
                 transcriptionProvider = userPreferences.selectedTranscriptionProvider
                 summarizationProvider = userPreferences.selectedSummaryProvider
-
+                // firebaseFunctionHttpUrl = userPreferences.firebaseFunctionHttpUrl // If URL is dynamic
+                // openAiModelForChat = userPreferences.openAiModel // If model is dynamic
 
                 if (firebaseFunctionHttpUrl.isBlank()) {
                     Log.e("UnifiedApiClient", "CRITICAL: firebaseFunctionHttpUrl is not set. HTTP API calls will fail.")
@@ -149,7 +134,17 @@ class UnifiedApiClient @Inject constructor(
         }
     }
 
-    // --- ApiService Implementations ---
+    // Helper function to get App Check token
+    private suspend fun getAppCheckToken(): String? {
+        return try {
+            val appCheckTokenResult = firebaseAppCheck.getAppCheckToken(false).await() // false = don't force refresh
+            Log.d("UnifiedApiClient", "App Check token retrieved")
+            appCheckTokenResult.token
+        } catch (e: Exception) {
+            Log.e("UnifiedApiClient", "Error getting App Check token", e)
+            null
+        }
+    }
 
     override suspend fun transcribe(audioFile: File): Result<String> {
         if (!isNetworkAvailable(context)) return Result.failure(Exception("No network connection available"))
@@ -167,7 +162,7 @@ class UnifiedApiClient @Inject constructor(
         return if (summarizationProvider == ProviderType.GEMINI) {
             summarizeWithGeminiSdkInternal(text)
         } else {
-            val systemPrompt = "You are the most helpful assistant that ONLY summarizes text. Summarize in ${language.uppercase()}." //
+            val systemPrompt = "You are the most helpful assistant that ONLY summarizes text. Summarize in ${language.uppercase()}."
             processTextWithHttpInternal(text, systemPrompt, openAiModelForChat, "Summarization")
         }
     }
@@ -175,22 +170,27 @@ class UnifiedApiClient @Inject constructor(
     override suspend fun translate(text: String): Result<String> {
         if (!isNetworkAvailable(context)) return Result.failure(Exception("No network connection available for Translation"))
 
-        return if (summarizationProvider == ProviderType.GEMINI) {
+        // Assuming translation might also have a provider switch similar to summarization
+        // For now, let's assume it can use Gemini or OpenAI via HTTP like summarization
+        return if (summarizationProvider == ProviderType.GEMINI) { // Or a new translationProvider
             translateWithGeminiSdkInternal(text)
         } else {
-            val systemPrompt = "You are the most helpful assistant that ONLY translates text. Translate to ${language.uppercase()}." //
+            val systemPrompt = "You are the most helpful assistant that ONLY translates text. Translate to ${language.uppercase()}."
             processTextWithHttpInternal(text, systemPrompt, openAiModelForChat, "Translation")
         }
     }
 
-    // --- HTTP/Cloud Function (OpenAI proxy) Methods ---
-
     private suspend fun transcribeWithHttpInternal(audioFile: File): Result<String> {
-        if (firebaseFunctionHttpUrl.isBlank()) return Result.failure(Exception("Firebase Function URL not configured for HTTP transcription.")) //
+        if (firebaseFunctionHttpUrl.isBlank()) return Result.failure(Exception("Firebase Function URL not configured for HTTP transcription."))
+
+        val appCheckToken = getAppCheckToken() // Get the token
+        if (appCheckToken == null) {
+            return Result.failure(Exception("Failed to retrieve App Check token for transcription."))
+        }
 
         return withContext(Dispatchers.IO) {
             try {
-                val mediaTypeAudio = contentTypeForExtension(audioFile.extension) // logic, adapted
+                val mediaTypeAudio = contentTypeForExtension(audioFile.extension)
 
                 val response = ktorHttpClient.submitFormWithBinaryData(
                     url = firebaseFunctionHttpUrl.trim(),
@@ -199,17 +199,23 @@ class UnifiedApiClient @Inject constructor(
                             append(HttpHeaders.ContentType, mediaTypeAudio)
                             append(HttpHeaders.ContentDisposition, "filename=\"${audioFile.name}\"")
                         })
-                        append("model", "whisper-1") // Assuming "whisper-1" for HTTP transcription
+                        append("model", "whisper-1")
                     }
-                )
+                ) {
+                    header("X-Firebase-AppCheck", appCheckToken) // Add App Check token to header
+                }
 
                 val responseBodyString = response.bodyAsText()
                 if (!response.status.isSuccess()) {
                     Log.e("UnifiedApiClient", "Whisper failed via HTTP (Ktor): ${response.status.value} - $responseBodyString")
+                    // Check for App Check specific errors (often 401 or 403)
+                    if (response.status.value == 401 || response.status.value == 403) {
+                        Log.e("UnifiedApiClient", "App Check verification likely failed. Ensure App Check is set up correctly in Firebase Console and client.")
+                    }
                     return@withContext Result.failure(Exception("Transcription failed (HTTP Ktor): ${response.status.value} - ${responseBodyString ?: "Unknown error"}"))
                 }
 
-                val transcriptionText = jsonParser.parseToJsonElement(responseBodyString).jsonObject["text"]?.jsonPrimitive?.contentOrNull //
+                val transcriptionText = jsonParser.parseToJsonElement(responseBodyString).jsonObject["text"]?.jsonPrimitive?.contentOrNull
                 if (transcriptionText != null) Result.success(transcriptionText) else {
                     Log.e("UnifiedApiClient", "Could not parse 'text' from Whisper response (Ktor): $responseBodyString")
                     Result.failure(Exception("Transcription failed (Ktor): Could not parse response. Body: $responseBodyString"))
@@ -217,8 +223,6 @@ class UnifiedApiClient @Inject constructor(
             } catch (e: Exception) {
                 Log.e("UnifiedApiClient", "Error during Whisper HTTP call (Ktor): ${e.message}", e)
                 Result.failure(Exception("Transcription failed (HTTP Ktor): ${e.localizedMessage ?: "Unknown error"}"))
-            } finally {
-                // audioFile.delete() // Caller should manage file lifecycle or pass ownership explicitly
             }
         }
     }
@@ -229,18 +233,23 @@ class UnifiedApiClient @Inject constructor(
         modelToUse: String,
         clientOperation: String
     ): Result<String> {
-        if (firebaseFunctionHttpUrl.isBlank() || firebaseFunctionHttpUrl == " https://call-openai-python-wb7tbqxrta-ew.a.run.app".trim() + "YOUR_PYTHON_FUNCTION_HTTP_URL") { //
+        if (firebaseFunctionHttpUrl.isBlank() || firebaseFunctionHttpUrl == " https://call-openai-python-wb7tbqxrta-ew.a.run.app".trim() + "YOUR_PYTHON_FUNCTION_HTTP_URL") {
             Log.e("UnifiedApiClient", "Firebase Function HTTP URL is not configured for $clientOperation.")
             return Result.failure(Exception("Firebase Function URL not configured for $clientOperation."))
+        }
+
+        val appCheckToken = getAppCheckToken() // Get the token
+        if (appCheckToken == null) {
+            return Result.failure(Exception("Failed to retrieve App Check token for $clientOperation."))
         }
 
         return withContext(Dispatchers.IO) {
             try {
                 val messages = listOf(
-                    ChatMessage("system", systemPrompt), //
-                    ChatMessage("user", userText) //
+                    ChatMessage("system", systemPrompt),
+                    ChatMessage("user", userText)
                 )
-                val chatRequestBody = ChatCompletionRequest( //
+                val chatRequestBody = ChatCompletionRequest(
                     model = modelToUse,
                     messages = messages
                 )
@@ -250,26 +259,31 @@ class UnifiedApiClient @Inject constructor(
                 val response: HttpResponse = ktorHttpClient.post(firebaseFunctionHttpUrl.trim()) {
                     contentType(ContentType.Application.Json)
                     setBody(chatRequestBody)
+                    header("X-Firebase-AppCheck", appCheckToken) // Add App Check token to header
                 }
 
-                val responseBodyString = response.bodyAsText() // Get body text first for logging in all cases
+                val responseBodyString = response.bodyAsText()
                 if (!response.status.isSuccess()) {
                     Log.e("UnifiedApiClient", "$clientOperation failed via HTTP (Ktor): ${response.status.value} - $responseBodyString")
+                    // Check for App Check specific errors (often 401 or 403)
+                    if (response.status.value == 401 || response.status.value == 403) {
+                        Log.e("UnifiedApiClient", "App Check verification likely failed for $clientOperation. Ensure App Check is set up correctly in Firebase Console and client.")
+                    }
                     return@withContext Result.failure(Exception("$clientOperation failed (HTTP Ktor): ${response.status.value} - $responseBodyString"))
                 }
 
                 val openAIResponse = try {
-                    jsonParser.decodeFromString<ApiChatCompletionResponse>(responseBodyString) // using the Json parser directly
+                    jsonParser.decodeFromString<ApiChatCompletionResponse>(responseBodyString)
                 } catch (e: Exception) {
                     Log.e("UnifiedApiClient", "Failed to parse $clientOperation response (Ktor): ${e.message}. Body: $responseBodyString", e)
                     return@withContext Result.failure(Exception("$clientOperation failed (Ktor): Could not parse response. Body: $responseBodyString"))
                 }
 
-                val processedText = openAIResponse.choices?.firstOrNull()?.message?.content //
+                val processedText = openAIResponse.choices?.firstOrNull()?.message?.content
                 if (processedText != null) {
                     Result.success(processedText)
                 } else {
-                    val errorDetails = openAIResponse.error?.message ?: "Unknown structure or empty choices" //
+                    val errorDetails = openAIResponse.error?.message ?: "Unknown structure or empty choices"
                     Log.e("UnifiedApiClient", "Could not parse 'content' from $clientOperation response (Ktor) or choices array empty/null. Error: $errorDetails. Full Response Body: $responseBodyString")
                     Result.failure(Exception("$clientOperation failed (Ktor): Could not extract content from response ($errorDetails)."))
                 }
@@ -281,26 +295,26 @@ class UnifiedApiClient @Inject constructor(
         }
     }
 
+
     // --- Firebase Gemini SDK Methods ---
+    // NO CHANGES NEEDED HERE FOR APP CHECK - SDK handles it automatically
 
     private suspend fun transcribeWithGeminiSdkInternal(audioFile: File): Result<String> {
+        // App Check is handled automatically by the Firebase SDK
         return withContext(Dispatchers.IO) {
             try {
-                val audioUri = audioFile.toUri() //
-                val contentResolver = context.contentResolver //
+                val audioUri = audioFile.toUri()
+                val contentResolver = context.contentResolver
+                val prompt = "You are a helpful assistant that ONLY transcribes audio. Transcribe in the Spoken Language and format the Text."
 
-                // Prompt can be refined here if needed, incorporating `language` more explicitly if the model supports it well for transcription.
-                val prompt = "You are a helpful assistant that ONLY transcribes audio. Transcribe in the Spoken Language and format the Text." //
+                val model = Firebase.ai(backend = GenerativeBackend.googleAI()) // Use the new entry point
+                    .generativeModel(geminiModelName,
+                        systemInstruction = content { text(prompt) })
 
-                val model = Firebase.ai(backend = GenerativeBackend.googleAI()) //
-                    .generativeModel(geminiModelName, // Using the class property for model name
-                        systemInstruction = content { text(prompt) }) //
-
-                contentResolver.openInputStream(audioUri)?.use { stream -> //
+                contentResolver.openInputStream(audioUri)?.use { stream ->
                     val audioBytes = stream.readBytes()
-                    // Determine MIME type from file extension for Gemini, similar to HTTP.
                     val mimeType = contentTypeForExtension(audioFile.extension)
-                    val response = model.generateContent(content { inlineData(audioBytes, mimeType) }) // adapted with mimeType
+                    val response = model.generateContent(content { inlineData(audioBytes, mimeType) })
                     response.text?.let {
                         if (it.isNotBlank()) {
                             return@withContext Result.success(it)
@@ -312,31 +326,29 @@ class UnifiedApiClient @Inject constructor(
                         Log.e("UnifiedApiClient", "Gemini SDK transcription response was null. Full response: ${response.candidates}")
                         return@withContext Result.failure(Exception("Transcription failed (Gemini SDK): Null response text"))
                     }
-                } ?: return@withContext Result.failure(Exception("Failed to open audio file stream for Gemini SDK transcription.")) //
+                } ?: return@withContext Result.failure(Exception("Failed to open audio file stream for Gemini SDK transcription."))
             } catch (e: Exception) {
                 Log.e("UnifiedApiClient", "Error during Gemini SDK transcription: ${e.message}", e)
                 Result.failure(Exception("Transcription failed (Gemini SDK): ${e.localizedMessage ?: "Unknown error"}"))
-            } finally {
-                // audioFile.delete() // Caller should manage file lifecycle
             }
         }
     }
 
-
     private suspend fun summarizeWithGeminiSdkInternal(text: String): Result<String> {
+        // App Check is handled automatically by the Firebase SDK
         return withContext(Dispatchers.IO) {
             try {
-                val systemPrompt = "You are a helpful assistant that ONLY summarizes text. Summarize in ${language.uppercase()}." // (language was part of the prompt)
-                val model = Firebase.ai(backend = GenerativeBackend.googleAI()) //
+                val systemPrompt = "You are a helpful assistant that ONLY summarizes text. Summarize in ${language.uppercase()}."
+                val model = Firebase.ai(backend = GenerativeBackend.googleAI())
                     .generativeModel(geminiModelName,
-                        systemInstruction = content { text(systemPrompt) }) //
+                        systemInstruction = content { text(systemPrompt) })
 
-                val response = model.generateContent(text) //
-                if (response.text.isNullOrBlank()) { //
+                val response = model.generateContent(text)
+                if (response.text.isNullOrBlank()) {
                     Log.e("UnifiedApiClient", "Gemini SDK summarization resulted in empty or null text. Full response: ${response.candidates}")
-                    Result.failure(Exception("Summary failed (Gemini SDK): Empty response")) //
+                    Result.failure(Exception("Summary failed (Gemini SDK): Empty response"))
                 } else {
-                    Result.success(response.text!!) //
+                    Result.success(response.text!!)
                 }
             } catch (e: Exception) {
                 Log.e("UnifiedApiClient", "Error during Gemini SDK summarization: ${e.message}", e)
@@ -346,19 +358,20 @@ class UnifiedApiClient @Inject constructor(
     }
 
     private suspend fun translateWithGeminiSdkInternal(text: String): Result<String> {
+        // App Check is handled automatically by the Firebase SDK
         return withContext(Dispatchers.IO) {
             try {
-                val systemPrompt = "You are the most helpful assistant that ONLY translates text. Translate to ${language.uppercase()}." //
-                val model = Firebase.ai(backend = GenerativeBackend.googleAI()) //
+                val systemPrompt = "You are the most helpful assistant that ONLY translates text. Translate to ${language.uppercase()}."
+                val model = Firebase.ai(backend = GenerativeBackend.googleAI())
                     .generativeModel(geminiModelName,
-                        systemInstruction = content { text(systemPrompt) }) //
+                        systemInstruction = content { text(systemPrompt) })
 
-                val response = model.generateContent(text) //
-                if (response.text.isNullOrBlank()) { //
+                val response = model.generateContent(text)
+                if (response.text.isNullOrBlank()) {
                     Log.e("UnifiedApiClient", "Gemini SDK translation resulted in empty or null text. Full response: ${response.candidates}")
-                    Result.failure(Exception("Translation failed (Gemini SDK): Empty response")) //
+                    Result.failure(Exception("Translation failed (Gemini SDK): Empty response"))
                 } else {
-                    Result.success(response.text!!) //
+                    Result.success(response.text!!)
                 }
             } catch (e: Exception) {
                 Log.e("UnifiedApiClient", "Error during Gemini SDK translation: ${e.message}", e)
@@ -367,9 +380,9 @@ class UnifiedApiClient @Inject constructor(
         }
     }
 
-    // --- Common Helper Methods ---
 
-    private fun isNetworkAvailable(context: Context): Boolean { //
+    // --- Common Helper Methods ---
+    private fun isNetworkAvailable(context: Context): Boolean {
         val connectivityManager =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
@@ -382,12 +395,12 @@ class UnifiedApiClient @Inject constructor(
         }
     }
 
-    private fun contentTypeForExtension(extension: String): String = when (extension.lowercase()) { //
+    private fun contentTypeForExtension(extension: String): String = when (extension.lowercase()) {
         "mp3" -> "audio/mpeg"
-        "m4a", "mp4" -> "audio/mp4" // Gemini examples use audio/mp4 for m4a
+        "m4a", "mp4" -> "audio/mp4"
         "wav" -> "audio/wav"
         "ogg" -> "audio/ogg"
         "flac" -> "audio/flac"
-        else -> "audio/mpeg" // Default fallback
+        else -> "audio/mpeg"
     }
 }
