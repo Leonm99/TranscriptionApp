@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.SignalCellularConnectedNoInternet0Bar
@@ -153,7 +154,7 @@ private fun ErrorDisplay(errorMessage: String) {
     val errorIcon: ImageVector
     val errorDescription: String
     if (errorMessage.contains("No network", ignoreCase = true)) {
-      errorIcon = Icons.Filled.SignalCellularConnectedNoInternet0Bar
+      errorIcon = Icons.Filled.CloudOff
       errorDescription = "No Network Connection Icon"
     } else {
       errorIcon = Icons.Filled.ErrorOutline

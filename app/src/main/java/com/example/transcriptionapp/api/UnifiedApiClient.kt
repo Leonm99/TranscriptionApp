@@ -156,7 +156,7 @@ class UnifiedApiClient @Inject constructor(
     override suspend fun summarize(text: String): Result<String> {
         if (!isNetworkAvailable(context)) return Result.failure(Exception("No network connection available for Summarization"))
 
-        return if (transcriptionProvider == ProviderType.GEMINI) {
+        return if (summarizationProvider == ProviderType.GEMINI) {
             summarizeWithGeminiSdkInternal(text)
         } else {
             val systemPrompt = "You are the most helpful assistant that ONLY summarizes text. Summarize in ${language.uppercase()}." //
@@ -167,7 +167,7 @@ class UnifiedApiClient @Inject constructor(
     override suspend fun translate(text: String): Result<String> {
         if (!isNetworkAvailable(context)) return Result.failure(Exception("No network connection available for Translation"))
 
-        return if (transcriptionProvider == ProviderType.GEMINI) {
+        return if (summarizationProvider == ProviderType.GEMINI) {
             translateWithGeminiSdkInternal(text)
         } else {
             val systemPrompt = "You are the most helpful assistant that ONLY translates text. Translate to ${language.uppercase()}." //

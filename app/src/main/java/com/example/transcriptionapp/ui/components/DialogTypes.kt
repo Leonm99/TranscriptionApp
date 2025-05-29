@@ -3,6 +3,7 @@ package com.example.transcriptionapp.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +30,7 @@ fun LanguageDialog(viewModel: SettingsViewModel, selectedLanguageKey: String?) {
   val items = stringArrayResource(id = R.array.string_array_languages)
 
   AlertDialog(
+    modifier = Modifier.heightIn(max = 550.dp),
     onDismissRequest = { viewModel.hideDialog() },
     title = { Text(text = "Language") },
     text = {
@@ -62,7 +64,11 @@ fun TranscriptionDialog(viewModel: SettingsViewModel, selectedProvider: Provider
       LazyColumn {
         items(items) { provider ->
           LabelRadioButton(
-            item = provider.toString(),
+            item = if (provider.toString() == "OPEN_AI") {
+              "Open AI"
+            } else {
+              "Google Gemini"
+            },
             isSelected = provider == userSelectedProvider.value,
             onClick = {
               userSelectedProvider.value = if (provider.toString() == "OPEN_AI") {
@@ -71,6 +77,7 @@ fun TranscriptionDialog(viewModel: SettingsViewModel, selectedProvider: Provider
                 ProviderType.GEMINI
               }
               viewModel.setSelectedTranscriptionProvider(provider)
+              viewModel.hideDialog()
             },
           )
         }
@@ -93,7 +100,11 @@ fun SummaryDialog(viewModel: SettingsViewModel, selectedProvider: ProviderType) 
       LazyColumn {
         items(items) { provider ->
           LabelRadioButton(
-            item = provider.toString(),
+            item = if (provider.toString() == "OPEN_AI") {
+              "Open AI"
+            } else {
+              "Google Gemini"
+            },
             isSelected = provider == userSelectedProvider.value,
             onClick = {
               userSelectedProvider.value = if (provider.toString() == "OPEN_AI") {
@@ -102,6 +113,7 @@ fun SummaryDialog(viewModel: SettingsViewModel, selectedProvider: ProviderType) 
                 ProviderType.GEMINI
               }
               viewModel.setSelectedSummaryProvider(provider)
+              viewModel.hideDialog()
             },
           )
         }

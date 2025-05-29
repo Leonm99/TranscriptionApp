@@ -14,12 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.GeneratingTokens
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Card
@@ -72,7 +74,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
             Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = "Back",
-              tint = MaterialTheme.colorScheme.primary,
+              tint = MaterialTheme.colorScheme.onPrimaryContainer,
             )
           }
         },
@@ -96,11 +98,11 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
         SettingsCardGroup(title = "Transcription Service") {
           SettingsMenuLink(
             title = { Text(text = "Transcription Provider") },
-            subtitle = { Text(text = settings.selectedTranscriptionProvider.toString().ifBlank { "Default" }) },
+            subtitle = { Text(text = if (settings.selectedTranscriptionProvider.toString() == "OPEN_AI") "Open AI" else "Google Gemini") },
             onClick = { viewModel.showDialog(DialogType.TRANSCRIPTION_PROVIDER) },
             icon = {
               Icon(
-                imageVector = Icons.Default.Dns, // More specific icon
+                imageVector = Icons.Default.GeneratingTokens,
                 contentDescription = "Transcription Provider",
                 tint = MaterialTheme.colorScheme.primary
               )
@@ -112,11 +114,11 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel) {
 
             SettingsMenuLink(
               title = { Text(text = "Summarization & Translation Provider") },
-              subtitle = { Text(text = settings.selectedSummaryProvider.toString().ifBlank { "Default" }) },
+              subtitle = { Text(text = if (settings.selectedSummaryProvider.toString() == "OPEN_AI") "Open AI" else "Google Gemini") },
               onClick = { viewModel.showDialog(DialogType.SUMMARIZATION_PROVIDER) },
               icon = {
                 Icon(
-                  imageVector = Icons.Default.Dns, // More specific icon
+                  imageVector = Icons.AutoMirrored.Filled.Message,
                   contentDescription = "Model",
                   tint = MaterialTheme.colorScheme.primary
                 )
