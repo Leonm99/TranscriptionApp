@@ -13,6 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -40,9 +41,14 @@ class MainActivity : ComponentActivity() {
   var dynamicColor: Boolean = true
   val context = this
 
-  private val permissionsToRequest = arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
 
-  override fun onCreate(savedInstanceState: Bundle?) {
+  private val permissionsToRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      arrayOf(Manifest.permission.READ_MEDIA_AUDIO)
+  } else {
+      arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+  }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
 
     super.onCreate(savedInstanceState)
     CoroutineScope(Dispatchers.IO).launch {

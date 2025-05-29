@@ -6,15 +6,15 @@ import javax.inject.Inject
 class ApiServiceFactory
 @Inject
 constructor(
-  private val UnifiedApiClient: UnifiedApiClient,
-  private val MockApiHandler: MockApiHandler,
+  private val unifiedApiClient: UnifiedApiClient,
+  private val mockApiHandler: MockApiHandler,
 ) {
 
   fun create(userPreferences: UserPreferences): ApiService {
     return if (userPreferences.mockApi) {
-      MockApiHandler
+      mockApiHandler
     } else {
-      UnifiedApiClient
+      unifiedApiClient
     }
   }
 }

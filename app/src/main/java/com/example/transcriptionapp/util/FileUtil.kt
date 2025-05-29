@@ -72,7 +72,7 @@ object FileUtils {
     Log.d("TAG", "Cleared temp directory: ${tempDir.absolutePath}")
   }
 
-  suspend fun convertToMP3(inputUri: Uri, context: Context): File? {
+  fun convertToMP3(inputUri: Uri, context: Context): File? {
     Log.d("FileUtil", "Input URI: ${inputUri.path}")
     // Check if the input is already an MP3 file
     val mimeType = context.contentResolver.getType(inputUri)

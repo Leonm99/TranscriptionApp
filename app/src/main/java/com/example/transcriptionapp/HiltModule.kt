@@ -8,9 +8,9 @@ import androidx.room.Room
 import com.example.transcriptionapp.api.MockApiHandler
 import com.example.transcriptionapp.api.ApiServiceFactory
 import com.example.transcriptionapp.api.UnifiedApiClient
-import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDatabase
+import com.example.transcriptionapp.model.TranscriptionRepository
+import com.example.transcriptionapp.model.database.TranscriptionDao
+import com.example.transcriptionapp.model.database.TranscriptionDatabase
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.UserPreferences
 import com.example.transcriptionapp.model.UserPreferencesSerializer
@@ -48,7 +48,6 @@ object HiltModule {
   }
 
   private const val USER_PREFERENCES_NAME = "user_preferences"
-  private const val DATA_STORE_FILE_NAME = "user_prefs.pb"
 
   @Provides
   @Singleton
@@ -101,12 +100,12 @@ object HiltModule {
   @Provides
   @Singleton
   fun provideApiServiceFactory(
-   UnifiedApiClient: UnifiedApiClient,
+   unifiedApiClient: UnifiedApiClient,
     mockApiHandler: MockApiHandler,
   ): ApiServiceFactory {
     return ApiServiceFactory(
-      UnifiedApiClient = UnifiedApiClient,
-      MockApiHandler = mockApiHandler,
+      unifiedApiClient,
+      mockApiHandler,
     )
   }
 

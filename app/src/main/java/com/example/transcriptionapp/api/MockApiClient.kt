@@ -25,10 +25,4 @@ class MockApiHandler() : ApiService {
     return Result.success(text.repeat(8))
   }
 
-  suspend fun checkApiKey(apiKey: String): Boolean {
-
-    return true
-  }
-
-
 }

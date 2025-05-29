@@ -1,4 +1,4 @@
-package com.example.transcriptionapp.com.example.transcriptionapp.model.database
+package com.example.transcriptionapp.model.database
 
 import androidx.room.ColumnInfo
 import androidx.room.Dao

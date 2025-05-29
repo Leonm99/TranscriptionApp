@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Addchart
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,7 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.transcriptionapp.R
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
+import com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.ui.components.ScrollableWithFixedPartsModalSheet
 import com.example.transcriptionapp.ui.components.TranscriptionDetailDialog
 import com.example.transcriptionapp.ui.components.TranscriptionListItem

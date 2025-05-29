@@ -50,7 +50,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
+import com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.util.copyToClipboard
 import kotlinx.coroutines.launch
 
@@ -75,7 +75,7 @@ fun TranscriptionDetailDialog(
     // Determine if there's any copyable content at all to show the FAB
     val hasAnyCopyableContent = remember(transcription, tabs, pagerState.currentPage) {
         when (tabs.getOrNull(pagerState.currentPage)) {
-            "Transcription" -> !transcription.transcriptionText.isNullOrBlank()
+            "Transcription" -> transcription.transcriptionText.isNotBlank()
             "Summary" -> !transcription.summaryText.isNullOrBlank()
             "Translation" -> !transcription.translationText.isNullOrBlank()
             else -> false

@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable // Use clickable for single click when not combined
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -32,9 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.SignalCellularConnectedNoInternet0Bar
-import androidx.compose.material.icons.rounded.CheckCircle // For selected state
-import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -51,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
@@ -61,10 +57,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
+import com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.ui.theme.SpacingMedium
 import com.example.transcriptionapp.ui.theme.SpacingSmall
 import com.example.transcriptionapp.viewmodel.formatTimestamp
+
 // Make sure ComposeVerticalScrollBar.kt is in this package or import it correctly
 // import com.example.transcriptionapp.com.example.transcriptionapp.ui.components.verticalScrollbar
 

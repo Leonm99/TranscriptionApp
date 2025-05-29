@@ -1,7 +1,7 @@
-package com.example.transcriptionapp.com.example.transcriptionapp.model
+package com.example.transcriptionapp.model
 
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.Transcription
-import com.example.transcriptionapp.com.example.transcriptionapp.model.database.TranscriptionDao
+import com.example.transcriptionapp.model.database.Transcription
+import com.example.transcriptionapp.model.database.TranscriptionDao
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

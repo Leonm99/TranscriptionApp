@@ -2,7 +2,7 @@ package com.example.transcriptionapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.transcriptionapp.com.example.transcriptionapp.model.TranscriptionRepository
+import com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.model.ProviderType
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.UserPreferences
