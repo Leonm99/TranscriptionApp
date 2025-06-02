@@ -63,6 +63,9 @@ dependencies {
   implementation(libs.advanced.bottomsheet.material3)
   implementation(libs.modalsheet)
   implementation(libs.androidx.ui.text.google.fonts)
+  implementation(libs.coil.kt.coil.compose)
+
+
 
   implementation(libs.retrofit)
   implementation(libs.convert.gson)
@@ -98,6 +101,11 @@ dependencies {
   implementation(libs.firebase.appcheck.playintegrity)
   implementation(libs.firebase.appcheck.debug)
   implementation(libs.firebase.appcheck.ktx)
+
+  implementation(libs.firebase.auth.ktx)
+  implementation (libs.androidx.credentials)
+  implementation (libs.androidx.credentials.play.services.auth)
+  implementation (libs.googleid)
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)

@@ -11,7 +11,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
-import com.google.firebase.appcheck.FirebaseAppCheck // Import AppCheck
+import com.google.firebase.appcheck.FirebaseAppCheck
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -20,7 +20,7 @@ import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
-import io.ktor.client.request.header // Import for adding headers
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -34,7 +34,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await // For converting Task to suspend function
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -45,7 +45,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-// ... (Your data classes ApiError, ChatMessage, etc. remain the same) ...
+
 @Serializable
 data class ChatMessage(val role: String, val content: String)
 
@@ -81,7 +81,7 @@ class UnifiedApiClient @Inject constructor(
     private val context: Context
 ) : ApiService {
 
-    private val firebaseAppCheck: FirebaseAppCheck = FirebaseAppCheck.getInstance() // Get AppCheck instance
+    private val firebaseAppCheck: FirebaseAppCheck = FirebaseAppCheck.getInstance()
 
     private val ktorHttpClient = HttpClient(OkHttp) {
         engine {
@@ -104,7 +104,7 @@ class UnifiedApiClient @Inject constructor(
                     Log.v("KtorLogger", message)
                 }
             }
-            level = LogLevel.INFO // Consider LogLevel.ALL for debugging App Check issues
+            level = LogLevel.INFO
         }
     }
 
@@ -113,7 +113,7 @@ class UnifiedApiClient @Inject constructor(
     private var transcriptionProvider: ProviderType = ProviderType.OPEN_AI
     private var summarizationProvider: ProviderType = ProviderType.OPEN_AI
     private var openAiModelForChat: String = "gpt-4o-mini"
-    private val geminiModelName: String = "gemini-2.0-flash-lite-001" // Gemini Vertex AI model
+    private val geminiModelName: String = "gemini-2.0-flash-lite-001"
 
     private val jsonParser = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -123,8 +123,7 @@ class UnifiedApiClient @Inject constructor(
                 language = userPreferences.selectedLanguage
                 transcriptionProvider = userPreferences.selectedTranscriptionProvider
                 summarizationProvider = userPreferences.selectedSummaryProvider
-                // firebaseFunctionHttpUrl = userPreferences.firebaseFunctionHttpUrl // If URL is dynamic
-                // openAiModelForChat = userPreferences.openAiModel // If model is dynamic
+
 
                 if (firebaseFunctionHttpUrl.isBlank()) {
                     Log.e("UnifiedApiClient", "CRITICAL: firebaseFunctionHttpUrl is not set. HTTP API calls will fail.")
@@ -170,8 +169,6 @@ class UnifiedApiClient @Inject constructor(
     override suspend fun translate(text: String): Result<String> {
         if (!isNetworkAvailable(context)) return Result.failure(Exception("No network connection available for Translation"))
 
-        // Assuming translation might also have a provider switch similar to summarization
-        // For now, let's assume it can use Gemini or OpenAI via HTTP like summarization
         return if (summarizationProvider == ProviderType.GEMINI) { // Or a new translationProvider
             translateWithGeminiSdkInternal(text)
         } else {
@@ -202,13 +199,12 @@ class UnifiedApiClient @Inject constructor(
                         append("model", "whisper-1")
                     }
                 ) {
-                    header("X-Firebase-AppCheck", appCheckToken) // Add App Check token to header
+                    header("X-Firebase-AppCheck", appCheckToken)
                 }
 
                 val responseBodyString = response.bodyAsText()
                 if (!response.status.isSuccess()) {
                     Log.e("UnifiedApiClient", "Whisper failed via HTTP (Ktor): ${response.status.value} - $responseBodyString")
-                    // Check for App Check specific errors (often 401 or 403)
                     if (response.status.value == 401 || response.status.value == 403) {
                         Log.e("UnifiedApiClient", "App Check verification likely failed. Ensure App Check is set up correctly in Firebase Console and client.")
                     }
@@ -259,13 +255,12 @@ class UnifiedApiClient @Inject constructor(
                 val response: HttpResponse = ktorHttpClient.post(firebaseFunctionHttpUrl.trim()) {
                     contentType(ContentType.Application.Json)
                     setBody(chatRequestBody)
-                    header("X-Firebase-AppCheck", appCheckToken) // Add App Check token to header
+                    header("X-Firebase-AppCheck", appCheckToken)
                 }
 
                 val responseBodyString = response.bodyAsText()
                 if (!response.status.isSuccess()) {
                     Log.e("UnifiedApiClient", "$clientOperation failed via HTTP (Ktor): ${response.status.value} - $responseBodyString")
-                    // Check for App Check specific errors (often 401 or 403)
                     if (response.status.value == 401 || response.status.value == 403) {
                         Log.e("UnifiedApiClient", "App Check verification likely failed for $clientOperation. Ensure App Check is set up correctly in Firebase Console and client.")
                     }
@@ -297,17 +292,15 @@ class UnifiedApiClient @Inject constructor(
 
 
     // --- Firebase Gemini SDK Methods ---
-    // NO CHANGES NEEDED HERE FOR APP CHECK - SDK handles it automatically
 
     private suspend fun transcribeWithGeminiSdkInternal(audioFile: File): Result<String> {
-        // App Check is handled automatically by the Firebase SDK
         return withContext(Dispatchers.IO) {
             try {
                 val audioUri = audioFile.toUri()
                 val contentResolver = context.contentResolver
                 val prompt = "You are a helpful assistant that ONLY transcribes audio. Transcribe in the Spoken Language and format the Text."
 
-                val model = Firebase.ai(backend = GenerativeBackend.googleAI()) // Use the new entry point
+                val model = Firebase.ai(backend = GenerativeBackend.googleAI())
                     .generativeModel(geminiModelName,
                         systemInstruction = content { text(prompt) })
 
@@ -335,7 +328,6 @@ class UnifiedApiClient @Inject constructor(
     }
 
     private suspend fun summarizeWithGeminiSdkInternal(text: String): Result<String> {
-        // App Check is handled automatically by the Firebase SDK
         return withContext(Dispatchers.IO) {
             try {
                 val systemPrompt = "You are a helpful assistant that ONLY summarizes text. Summarize in ${language.uppercase()}."
@@ -358,7 +350,6 @@ class UnifiedApiClient @Inject constructor(
     }
 
     private suspend fun translateWithGeminiSdkInternal(text: String): Result<String> {
-        // App Check is handled automatically by the Firebase SDK
         return withContext(Dispatchers.IO) {
             try {
                 val systemPrompt = "You are the most helpful assistant that ONLY translates text. Translate to ${language.uppercase()}."

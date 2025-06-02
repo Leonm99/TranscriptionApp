@@ -8,12 +8,14 @@ import androidx.room.Room
 import com.example.transcriptionapp.api.MockApiHandler
 import com.example.transcriptionapp.api.ApiServiceFactory
 import com.example.transcriptionapp.api.UnifiedApiClient
+import com.example.transcriptionapp.model.GoogleAuthClient
 import com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.model.database.TranscriptionDao
 import com.example.transcriptionapp.model.database.TranscriptionDatabase
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.UserPreferences
 import com.example.transcriptionapp.model.UserPreferencesSerializer
+import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -107,6 +109,18 @@ object HiltModule {
       unifiedApiClient,
       mockApiHandler,
     )
+  }
+
+  @Provides
+  @Singleton
+  fun provideGoogleAuthClient(@ApplicationContext context: Context, firebaseAuth: FirebaseAuth): GoogleAuthClient {
+    return GoogleAuthClient(context, firebaseAuth)
+  }
+
+  @Provides
+  @Singleton
+  fun provideFirebaseAuth(): FirebaseAuth {
+    return FirebaseAuth.getInstance()
   }
 
   @Provides @IODispatcher fun provideIODispatcher(): CoroutineDispatcher = Dispatchers.IO

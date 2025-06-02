@@ -19,3 +19,12 @@ local.properties
 /Pixel-7-Pro-API-34-Android-14_2024-12-14_234155.logcat
 /.idea/deploymentTargetSelector.xml
 /.idea/misc.xml
+/Firebase/.firebaserc
+/Firebase/functions/.gitignore
+/Firebase/.gitignore
+/Firebase/firebase.json
+/Firebase/firebase-tools-instant-win.exe
+/app/google-services.json
+/google-services.json
+/Firebase/functions/main.py
+/Firebase/functions/requirements.txt
