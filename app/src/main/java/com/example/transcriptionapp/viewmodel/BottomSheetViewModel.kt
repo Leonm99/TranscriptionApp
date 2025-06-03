@@ -241,7 +241,7 @@ constructor(
               timestamp = formatTimestamp(System.currentTimeMillis()),
             )
           clearTempDir(context)
-          audioUris.clear() // Clear after successful transcription
+          audioUris.clear()
         } else {
           _transcriptionError.value =
             transcriptionResults.firstOrNull { it.isFailure }?.exceptionOrNull()?.message
@@ -249,14 +249,13 @@ constructor(
           Log.e(TAG, "Transcription failed: ${_transcriptionError.value}")
         }
 
-        _isLoading.value = false // Transcription process finished
-        // toggleBottomSheet(true) // Already visible, no need to toggle again unless logic dictates
+        _isLoading.value = false
+
       } catch (e: Exception) {
         Log.e(TAG, "Error transcribing audios", e)
         _transcriptionError.value = e.message ?: "Error during transcription process"
         _isLoading.value = false
-        // audioUris.clear() // Decide if you want to clear URIs on general exception
-        // cachedAudioUris.clear() // Or keep them for retry
+        clearTempDir(context)
       }
     }
   }
@@ -413,10 +412,7 @@ constructor(
         timestamp = formatTimestamp(System.currentTimeMillis()),
       )
       transcriptionRepository.upsertTranscription(sample)
-      // To also display it in the bottom sheet immediately:
-      // _transcription.value = sample
-      // markAsFirstOpen()
-      // toggleBottomSheet(true)
+
     }
   }
 

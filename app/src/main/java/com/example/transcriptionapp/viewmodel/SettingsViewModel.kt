@@ -1,6 +1,7 @@
 package com.example.transcriptionapp.viewmodel
 
 import android.app.Activity
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,9 +11,11 @@ import com.example.transcriptionapp.model.ProviderType
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.model.UserPreferences
+import com.example.transcriptionapp.util.showToast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +29,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val TAG = "SettingsViewModel"
@@ -56,6 +60,8 @@ constructor(
   private val transcriptionRepository: TranscriptionRepository,
   private val googleAuthClient: GoogleAuthClient,
   private val firebaseAuth: FirebaseAuth,
+  @ApplicationContext private val context: Context
+
 ) : ViewModel() {
 
   val settings: StateFlow<UserPreferences> =
@@ -115,12 +121,18 @@ constructor(
         val signedIn = googleAuthClient.signIn(activity)
         if (signedIn) {
           Log.i(TAG, "Sign-in successful from ViewModel perspective.")
+          withContext(Dispatchers.Main) {
+            showToast(context, "Signed in")
+          }
         }
       } catch (e: NoGoogleAccountFoundException) {
         Log.w(TAG, "No Google account found, requesting to add one via system settings.")
         _navigateToSystemAddAccount.emit(Unit)
       } catch (e: Exception) {
         Log.e(TAG, "Sign-in error in ViewModel", e)
+        withContext(Dispatchers.Main) {
+          showToast(context, "Error signing in")
+        }
       }
     }
   }
@@ -129,6 +141,7 @@ constructor(
     viewModelScope.launch(Dispatchers.IO) {
       googleAuthClient.signOut()
     }
+    showToast(context, "Signed out")
   }
 
   fun showDialog(type: DialogType = DialogType.LANGUAGE) {
