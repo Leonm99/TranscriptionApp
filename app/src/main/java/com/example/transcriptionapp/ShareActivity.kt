@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlin.system.exitProcess
 
@@ -52,17 +54,6 @@ class ShareActivity : ComponentActivity() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ShareScreen) {
           composable<ShareScreen> {
-            //            val isBottomSheetVisible =
-            //
-            // bottomSheetViewModel.isBottomSheetVisible.collectAsStateWithLifecycle().value
-            //            AnimatedVisibility(isBottomSheetVisible, exit = fadeOut(), enter =
-            // fadeIn()) {
-            //              Box(
-            //                modifier =
-            //
-            // Modifier.fillMaxSize().alpha(0.5f).animateEnterExit().background(Color.Black)
-            //              )
-            //            }
             ScrollableWithFixedPartsModalSheet(bottomSheetViewModel)
           }
         }
@@ -79,11 +70,9 @@ class ShareActivity : ComponentActivity() {
     lifecycleScope.launch {
       bottomSheetViewModel.closeApp.collect { shouldClose ->
         if (shouldClose) {
-          Log.d(TAG, "closeApp: WE GET HERE FAM, WELL AT LEAST I HOPE SO")
           //finishAffinity() // Close the app
           finish()
           exitProcess(0)
-          Log.d(TAG, "JUST A LIL TEST")
         }
       }
     }
@@ -132,29 +121,58 @@ class ShareActivity : ComponentActivity() {
   }
 
   private fun handleAudioOrVideoIntent(intent: Intent) {
-    val clipData = intent.clipData
+    lifecycleScope.launch {
+      val urisToProcess = mutableListOf<Uri>()
+      intent.clipData?.let { clipData ->
+        for (i in 0 until clipData.itemCount) {
+          urisToProcess.add(clipData.getItemAt(i).uri)
+        }
+      } ?: intent.data?.let {
+        urisToProcess.add(it)
+      }
 
-    // Check if there are multiple URIs
-    if (clipData != null) {
-      for (i in 0 until clipData.itemCount) {
-        val item = clipData.getItemAt(i)
-        val uri = item.uri
-        val audioFile = FileUtils.saveFileToCache(this, uri)
-        audioFile?.let { file ->
-          Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
-          // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
+      if (urisToProcess.isEmpty()) {
+        Log.w(TAG, "No URIs found to process in the intent.")
+        Toast.makeText(this@ShareActivity, "No files selected.", Toast.LENGTH_SHORT).show()
+        return@launch
+      }
 
-          bottomSheetViewModel.onAudioSelected(Uri.fromFile(file))
+
+      val processedFileUris = mutableListOf<Uri>()
+
+      for (contentUri in urisToProcess) {
+        val fileUri = processAndCacheUri(contentUri)
+        fileUri?.let {
+          processedFileUris.add(it)
         }
       }
-    } else {
-      val uri = getUriFromIntent(intent)
-      val audioFile = FileUtils.saveFileToCache(this, uri)
-      audioFile?.let { file ->
-        Log.d(TAG, "Audio/Video file path: ${file.absolutePath}")
-        // ServiceUtil.startFloatingService(this,"TRANSCRIBE", file.absolutePath)
 
-        bottomSheetViewModel.onAudioSelected(Uri.fromFile(file))
+      if (processedFileUris.isNotEmpty()) {
+
+        bottomSheetViewModel.onAudioSelected(processedFileUris)
+        bottomSheetViewModel.endAfterSave = true
+        bottomSheetViewModel.toggleBottomSheet(true)
+        bottomSheetViewModel.transcribeAudios()
+      } else {
+        Log.w(TAG, "No files could be processed and cached.")
+        Toast.makeText(this@ShareActivity, "Could not process selected files.", Toast.LENGTH_SHORT).show()
+      }
+    }
+  }
+
+
+  private suspend fun processAndCacheUri(contentUri: Uri): Uri? {
+    return withContext(Dispatchers.IO) {
+      try {
+        val audioFile = FileUtils.saveFileToCache(this@ShareActivity, contentUri)
+        audioFile?.let { file ->
+          Log.d(TAG, "Audio/Video file cached: ${file.absolutePath}")
+          // ServiceUtil.startFloatingService(this@ShareActivity,"TRANSCRIBE", file.absolutePath)
+          Uri.fromFile(file)
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "Error caching file from URI: $contentUri", e)
+        null
       }
     }
   }
@@ -167,14 +185,6 @@ class ShareActivity : ComponentActivity() {
     }
   }
 
-  private fun getUriFromIntent(intent: Intent): Uri {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-    } else {
-      @Suppress("DEPRECATION")
-      intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
-    } ?: throw IllegalArgumentException("No URI found in intent")
-  }
 }
 
 @Serializable object ShareScreen

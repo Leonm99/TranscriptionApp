@@ -176,8 +176,10 @@ constructor(
   }
 
 
-  fun onAudioSelected(audioUri: Uri) {
-    audioUris += audioUri
+  fun onAudioSelected(audioUri: MutableList<Uri>) {
+    audioUri.forEach {
+      audioUris.add(it)
+    }
     _totalAudioCount.value = audioUris.size
   }
 
