@@ -2,11 +2,11 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
-  alias(libs.plugins.jetbrains.kotlin.serialization)
+  alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.ksp)
-  alias(libs.plugins.dagger.hilt.android)
+  alias(libs.plugins.dagger.hilt)
   alias(libs.plugins.room)
-  alias(libs.plugins.gservices)
+  alias(libs.plugins.google.services)
 }
 
 android {
@@ -49,69 +49,71 @@ android {
 room { schemaDirectory("$projectDir/schemas") }
 
 dependencies {
+  // AndroidX Core & Lifecycle
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
-  implementation(libs.androidx.activity.compose)
-  implementation(platform(libs.androidx.compose.bom))
-  implementation(libs.androidx.ui)
-  implementation(libs.androidx.ui.graphics)
-  implementation(libs.androidx.ui.tooling.preview)
-
-  implementation(libs.androidx.material3)
-  implementation(libs.materialIconsExtended)
-  implementation(libs.material)
-  implementation(libs.advanced.bottomsheet.material3)
-  implementation(libs.modalsheet)
-  implementation(libs.androidx.ui.text.google.fonts)
-  implementation(libs.coil.kt.coil.compose)
-
-
-
-  implementation(libs.retrofit)
-  implementation(libs.convert.gson)
-
-  implementation(libs.ktor.client.core)
-  implementation(libs.ktor.client.okhttp)
-  implementation(libs.ktor.client.plugins)
-  implementation(libs.ktor.client.content.negotiation)
-  implementation(libs.ktor.client.logging)
-  implementation(libs.ktor.serialization.kotlinx.json)
-
-
   implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-  implementation(libs.composeSettings.ui)
-  implementation(libs.composeSettings.ui.extended)
+  // Compose
+  implementation(platform(libs.androidx.compose.bom))
+  implementation(libs.androidx.activity.compose)
+  implementation(libs.androidx.compose.material3)
+  implementation(libs.androidx.compose.material.icons.extended)
+  implementation(libs.androidx.compose.ui)
+  implementation(libs.androidx.compose.ui.graphics)
+  implementation(libs.androidx.compose.ui.text.google.fonts)
+  implementation(libs.androidx.compose.ui.tooling.preview)
 
+  // DataStore
   implementation(libs.androidx.datastore.preferences)
-  implementation(libs.kotlinx.serialization.json)
+
+  // Navigation
   implementation(libs.androidx.navigation.compose)
 
+  // Room
   implementation(libs.androidx.room.ktx)
   ksp(libs.androidx.room.compiler)
 
+  // Hilt (Dependency Injection)
   implementation(libs.hilt.android)
   ksp(libs.hilt.compiler)
 
-  implementation(libs.ffmpeg.kit.full)
-
+  // Firebase
   implementation(platform(libs.firebase.bom))
-  implementation(libs.firebase.functions)
   implementation(libs.firebase.ai)
-  implementation(libs.firebase.appcheck.playintegrity)
   implementation(libs.firebase.appcheck.debug)
   implementation(libs.firebase.appcheck.ktx)
-
+  implementation(libs.firebase.appcheck.playintegrity)
   implementation(libs.firebase.auth.ktx)
-  implementation (libs.androidx.credentials)
-  implementation (libs.androidx.credentials.play.services.auth)
-  implementation (libs.googleid)
+  implementation(libs.firebase.functions)
 
-  testImplementation(libs.junit)
-  androidTestImplementation(libs.androidx.junit)
-  androidTestImplementation(libs.androidx.espresso.core)
+  // Ktor (Networking)
+  implementation(libs.ktor.client.content.negotiation)
+  implementation(libs.ktor.client.core)
+  implementation(libs.ktor.client.logging)
+  implementation(libs.ktor.client.okhttp)
+  implementation(libs.ktor.client.plugins)
+  implementation(libs.ktor.serialization.kotlinx.json)
+
+  // Kotlin Serialization
+  implementation(libs.kotlinx.serialization.json)
+
+  // Other Libraries
+  implementation(libs.androidx.credentials)
+  implementation(libs.androidx.credentials.play.services.auth) // For Google Login
+  implementation(libs.coil.compose) // For Image Loading
+  implementation(libs.compose.settings.ui) // For Settings
+  implementation(libs.compose.settings.ui.extended)
+  implementation(libs.ffmpeg.kit.full) // For FFMPEG
+  implementation(libs.google.id) // For Google ID
+  implementation(libs.modalsheet) // For Modal Sheet
+
+  // Testing
+  testImplementation(libs.test.junit)
+  androidTestImplementation(libs.test.junit.androidx)
+  androidTestImplementation(libs.test.espresso.core)
   androidTestImplementation(platform(libs.androidx.compose.bom))
-  androidTestImplementation(libs.androidx.ui.test.junit4)
-  debugImplementation(libs.androidx.ui.tooling)
-  debugImplementation(libs.androidx.ui.test.manifest)
+  androidTestImplementation(libs.test.compose.ui.junit4)
+  debugImplementation(libs.androidx.compose.ui.tooling)
+  debugImplementation(libs.test.compose.ui.manifest)
 }
