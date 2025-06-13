@@ -11,7 +11,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
 import androidx.core.graphics.drawable.toDrawable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -55,6 +60,32 @@ class ShareActivity : ComponentActivity() {
         NavHost(navController = navController, startDestination = ShareScreen) {
           composable<ShareScreen> {
             ScrollableWithFixedPartsModalSheet(bottomSheetViewModel)
+            val duplicateFileWarningList by bottomSheetViewModel.showDuplicateFileWarning.collectAsStateWithLifecycle()
+
+            if (duplicateFileWarningList.isNotEmpty()) {
+              AlertDialog(
+                onDismissRequest = { bottomSheetViewModel.dismissDuplicateWarning() },
+                title = { Text("Already Transcribed?") },
+                text = {
+                  val fileNames = duplicateFileWarningList.joinToString(separator = "\n") { audioFileWithHash ->
+                    audioFileWithHash.uri.lastPathSegment ?: audioFileWithHash.uri.toString()
+
+                  }
+                  Text("The following file(s) appear in your transcription history:\n\n$fileNames\n\nDo you want to transcribe them again?")
+                },
+                confirmButton = {
+                  TextButton(onClick = {
+                    bottomSheetViewModel.proceedWithTranscription(transcribeDuplicates = true)
+
+                  }) { Text("Transcribe Anyway") }
+                },
+                dismissButton = {
+                  TextButton(onClick = {
+                    bottomSheetViewModel.proceedWithTranscription(transcribeDuplicates = false)
+                  }) { Text("Skip Duplicates") }
+                }
+              )
+            }
           }
         }
       }
@@ -99,9 +130,6 @@ class ShareActivity : ComponentActivity() {
       when {
         intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true -> {
           handleAudioOrVideoIntent(intent)
-          bottomSheetViewModel.endAfterSave = true
-          bottomSheetViewModel.toggleBottomSheet(true)
-          bottomSheetViewModel.transcribeAudios()
         }
 
         intent.type?.startsWith("text/") == true -> {
@@ -112,9 +140,6 @@ class ShareActivity : ComponentActivity() {
     if (intent?.action == Intent.ACTION_SEND_MULTIPLE) {
       if (intent.type?.startsWith("audio/") == true || intent.type?.startsWith("video/") == true) {
         handleAudioOrVideoIntent(intent)
-        bottomSheetViewModel.endAfterSave = true
-        bottomSheetViewModel.toggleBottomSheet(true)
-        bottomSheetViewModel.transcribeAudios()
 
       }
     }
@@ -148,11 +173,12 @@ class ShareActivity : ComponentActivity() {
       }
 
       if (processedFileUris.isNotEmpty()) {
-
+        
         bottomSheetViewModel.onAudioSelected(processedFileUris)
         bottomSheetViewModel.endAfterSave = true
-        bottomSheetViewModel.toggleBottomSheet(true)
-        bottomSheetViewModel.transcribeAudios()
+
+
+
       } else {
         Log.w(TAG, "No files could be processed and cached.")
         Toast.makeText(this@ShareActivity, "Could not process selected files.", Toast.LENGTH_SHORT).show()

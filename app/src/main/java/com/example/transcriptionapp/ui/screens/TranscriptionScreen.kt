@@ -141,7 +141,6 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar("Processing audio files...")
                         }
-                        viewModel.transcribeAudios()
                     } else {
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar("No audio files selected or supported.")
@@ -374,7 +373,7 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
                     }
                 }
             }
-        } // End of main Column
+        }// End of main Column
     } // End of Scaffold
 
     if (showDetailDialog && selectedTranscriptionForDialog != null) {
@@ -409,6 +408,32 @@ fun TranscriptionScreen(onSettingsClick: () -> Unit, viewModel: BottomSheetViewM
                 TextButton(onClick = { showDeleteConfirmationDialog = false }) {
                     Text("Cancel")
                 }
+            }
+        )
+    }
+
+    val duplicateFileWarningList by viewModel.showDuplicateFileWarning.collectAsStateWithLifecycle()
+
+    if (duplicateFileWarningList.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissDuplicateWarning() },
+            title = { Text("Already Transcribed?") },
+            text = {
+                val fileNames = duplicateFileWarningList.joinToString(separator = "\n") { audioFileWithHash ->
+                    audioFileWithHash.uri.lastPathSegment ?: audioFileWithHash.uri.toString()
+
+                }
+                Text("The following file(s) appear in your transcription history:\n\n$fileNames\n\nDo you want to transcribe them again?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.proceedWithTranscription(transcribeDuplicates = true)
+                }) { Text("Transcribe Anyway") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    viewModel.proceedWithTranscription(transcribeDuplicates = false)
+                }) { Text("Skip Duplicates") }
             }
         )
     }

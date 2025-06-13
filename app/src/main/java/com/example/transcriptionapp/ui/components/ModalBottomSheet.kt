@@ -23,12 +23,14 @@ import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +48,7 @@ import com.example.transcriptionapp.viewmodel.BottomSheetViewModel
 import eu.wewox.modalsheet.ExperimentalSheetApi
 import eu.wewox.modalsheet.ModalSheet
 import kotlinx.coroutines.launch
+import android.net.Uri
 
 private const val PAGE_TRANSCRIPTION_IDX = 0
 
@@ -174,8 +177,9 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
               CircularProgressIndicator(modifier = Modifier.size(100.dp))
               if (totalAudioCount > 1 && currentAudioIndex > 0) {
                 val stepText = when (processingStep) {
-                  BottomSheetViewModel.ProcessingStep.PROCESSING -> "Processing"
+                  BottomSheetViewModel.ProcessingStep.CONVERTING -> "Processing"
                   BottomSheetViewModel.ProcessingStep.TRANSCRIPTION -> "Transcribing"
+                  BottomSheetViewModel.ProcessingStep.HASHING_AND_CHECKING -> "Hashing and Checking"
                 }
                 Text(
                   modifier = Modifier.offset(y = (70).dp),
@@ -192,7 +196,9 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
             }
           } else { // Show Transcription Card or error related to it
             TranscriptionCard(
-              modifier = Modifier.padding(horizontal = SpacingSmall).padding(top = SpacingSmall),
+              modifier = Modifier
+                .padding(horizontal = SpacingSmall)
+                .padding(top = SpacingSmall),
               pagerState = cardPagerState,
               transcription = transcriptionObject,
               onCopyClicked = { textToCopy -> copyToClipboard(context, textToCopy) },
@@ -257,7 +263,9 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
                   viewModel.onTranslateClick()
                 }
               },
-              modifier = Modifier.weight(1f).padding(horizontal = SpacingSmall),
+              modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = SpacingSmall),
               shape = CircleShape,
               enabled = transcriptionObject.transcriptionText.isNotBlank() && !isLoading
             ) {
@@ -277,7 +285,9 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
           } else { // Error case (primary transcription error)
             Button(
               onClick = { viewModel.onRetryClick() },
-              modifier = Modifier.fillMaxWidth().padding(horizontal = SpacingSmall),
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = SpacingSmall),
               shape = CircleShape,
             ) {
               Icon(Icons.Default.Refresh, contentDescription = "Retry")
@@ -288,4 +298,5 @@ fun ScrollableWithFixedPartsModalSheet(viewModel: BottomSheetViewModel) {
 
     }// End of outer Box
   } // End of ModalSheet
+
 }

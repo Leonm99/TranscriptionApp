@@ -282,7 +282,8 @@ private fun PreviewTranscriptionDetailDialogWithBottomTabsAndFAB() {
                 timestamp = "2023-10-27 10:00 AM",
                 transcriptionText = "This is a sample transcription text. It's designed to be long enough to demonstrate scrolling within a tab. We can add more lines here to ensure that the vertical scroll is definitely needed for this section. \n\nMore lines... \nAnd more... \nTo ensure the FAB is clearly visible over scrolling content.",
                 summaryText = "Summary of the transcription. This could also be long enough to scroll and test the FAB.",
-                translationText = "Translation Text Sample, possibly also quite long to demonstrate the FAB behavior."
+                translationText = "Translation Text Sample, possibly also quite long to demonstrate the FAB behavior.",
+                fileHash = null
             ),
             onDismissRequest = {}
         )
@@ -299,7 +300,8 @@ private fun PreviewTranscriptionDetailDialogOnlyTranscriptionWithFAB() {
                 timestamp = "2023-10-27 10:00 AM",
                 transcriptionText = "This is a sample transcription text when only transcription is available.\nIt should still have a copy FAB if this text is not blank.",
                 summaryText = null, // Or ""
-                translationText = ""  // Or null
+                translationText = "",  // Or null
+                fileHash = null
             ),
             onDismissRequest = {}
         )
@@ -316,7 +318,8 @@ private fun PreviewTranscriptionDetailDialogNoCopyableContent() {
                 timestamp = "2023-10-27 10:00 AM",
                 transcriptionText = "", // Empty
                 summaryText = null,
-                translationText = null
+                translationText = null,
+                fileHash = null
             ),
             onDismissRequest = {}
         )

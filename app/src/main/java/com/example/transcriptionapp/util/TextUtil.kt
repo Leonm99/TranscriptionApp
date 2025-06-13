@@ -5,6 +5,9 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.regex.Pattern
 
 private const val TAG = "TextUtil"
@@ -50,4 +53,10 @@ fun copyToClipboard(context: Context, text: String) {
 
 fun showToast(context: Context, text: String, long: Boolean = false) {
   Toast.makeText(context, text, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
+}
+
+fun formatTimestamp(timestamp: Long): String {
+  val date = Date(timestamp)
+  val format = SimpleDateFormat("dd.MM.yyyy • HH:mm", Locale.getDefault())
+  return format.format(date)
 }

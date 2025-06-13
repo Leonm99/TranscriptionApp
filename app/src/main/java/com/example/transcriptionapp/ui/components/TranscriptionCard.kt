@@ -60,10 +60,8 @@ import androidx.compose.ui.unit.dp
 import com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.ui.theme.SpacingMedium
 import com.example.transcriptionapp.ui.theme.SpacingSmall
-import com.example.transcriptionapp.viewmodel.formatTimestamp
+import com.example.transcriptionapp.util.formatTimestamp
 
-// Make sure ComposeVerticalScrollBar.kt is in this package or import it correctly
-// import com.example.transcriptionapp.com.example.transcriptionapp.ui.components.verticalScrollbar
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -378,6 +376,7 @@ fun TranscriptionCardPreviewLight() {
         "This is a summary of the transcription.",
         "Ceci est une traduction du texte.",
         formatTimestamp(System.currentTimeMillis()),
+        null
       ),
       onCopyClicked = {},
       isSelected = false,
@@ -401,6 +400,7 @@ fun TranscriptionCardPreviewSelected() {
         "This card is selected.",
         null, null,
         formatTimestamp(System.currentTimeMillis()),
+        null
       ),
       onCopyClicked = {},
       isSelected = true,
@@ -419,7 +419,7 @@ fun TranscriptionCardPreviewError() {
     val previewPagerState = rememberPagerState(pageCount = { 1 })
     TranscriptionCard(
       pagerState = previewPagerState,
-      transcription = Transcription(0, "", null, null, formatTimestamp(System.currentTimeMillis())),
+      transcription = Transcription(0, "", null, null, formatTimestamp(System.currentTimeMillis()), null),
       onCopyClicked = {},
       isSelected = false,
       isSelectionMode = false,
@@ -444,6 +444,7 @@ fun TranscriptionCardPreviewDark() {
         "Summary for dark theme.",
         null, // No translation for this preview
         formatTimestamp(System.currentTimeMillis()),
+        null
       ),
       onCopyClicked = {},
       isSelected = false,

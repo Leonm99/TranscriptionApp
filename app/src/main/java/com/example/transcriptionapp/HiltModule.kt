@@ -15,6 +15,7 @@ import com.example.transcriptionapp.model.database.TranscriptionDatabase
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.UserPreferences
 import com.example.transcriptionapp.model.UserPreferencesSerializer
+import com.example.transcriptionapp.model.database.MIGRATION_1_2
 import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
@@ -36,10 +37,11 @@ object HiltModule {
   @Singleton
   fun provideTranscriptionDatabase(@ApplicationContext context: Context): TranscriptionDatabase {
     return Room.databaseBuilder(
-        context.applicationContext,
-        TranscriptionDatabase::class.java,
-        "transcription_database",
-      )
+      context.applicationContext,
+      TranscriptionDatabase::class.java,
+      "transcription_database_name" // Replace with your actual database name
+    )
+      .addMigrations(MIGRATION_1_2) // <--- ADD YOUR MIGRATION HERE
       .build()
   }
 

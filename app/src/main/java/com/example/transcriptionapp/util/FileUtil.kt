@@ -6,7 +6,9 @@ import android.util.Log
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.ReturnCode
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.security.MessageDigest
 import java.util.UUID
 
 object FileUtils {
@@ -81,8 +83,6 @@ object FileUtils {
     }
 
     return try {
-      // Generate a random output name
-
       // Define the output path using the random name
       val outputPath =
         File("${context.cacheDir}/temp", inputUri.lastPathSegment + ".mp3").absolutePath
@@ -98,14 +98,59 @@ object FileUtils {
 
       // Check if the conversion was successful
       if (ReturnCode.isSuccess(returnCode)) {
-        File(outputPath) // Return the file that gets created
+        File(outputPath)
       } else {
         Log.d("FileUtil", "Failed to convert file to MP3: $returnCode")
-        null // Return null if conversion failed
+        null
       }
     } catch (e: Exception) {
       Log.d("FileUtil", "Error converting file to MP3", e)
-      null // Return null in case of an error
+      null
+    }
+  }
+
+  fun getFileHash(context: Context, uri: Uri): String? {
+    return try {
+      context.contentResolver.openInputStream(uri)?.use { inputStream ->
+        val digest = MessageDigest.getInstance("MD5")
+        val buffer = ByteArray(8192)
+        var bytesRead: Int
+        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+          digest.update(buffer, 0, bytesRead)
+        }
+        // Convert byte array to Hex String
+        val md5sum = digest.digest()
+        val hexString = StringBuilder()
+        for (byte in md5sum) {
+          hexString.append(String.format("%02x", byte))
+        }
+        hexString.toString()
+      }
+    } catch (e: Exception) {
+       Log.e("FileUtils", "Error calculating file hash for URI: $uri", e)
+      null // Return null if hashing fails
+    }
+  }
+
+  fun getFileHash(file: File): String? {
+    return try {
+      FileInputStream(file).use { fis ->
+        val digest = MessageDigest.getInstance("MD5")
+        val buffer = ByteArray(8192)
+        var bytesRead: Int
+        while (fis.read(buffer).also { bytesRead = it } != -1) {
+          digest.update(buffer, 0, bytesRead)
+        }
+        val md5sum = digest.digest()
+        val hexString = StringBuilder()
+        for (byte in md5sum) {
+          hexString.append(String.format("%02x", byte))
+        }
+        hexString.toString()
+      }
+    } catch (e: Exception) {
+       Log.e("FileUtils", "Error calculating file hash for File: ${file.path}", e)
+      null
     }
   }
 }

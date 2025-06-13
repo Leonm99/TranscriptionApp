@@ -24,4 +24,8 @@ class TranscriptionRepository @Inject constructor(private val transcriptionDao: 
   suspend fun deleteTranscriptionById(transcriptionId: Int) {
     transcriptionDao.deleteTranscriptionById(transcriptionId)
   }
+
+  suspend fun getTranscriptionByFileHash(fileHash: String): Transcription? {
+    return transcriptionDao.getTranscriptionByFileHash(fileHash)
+  }
 }
