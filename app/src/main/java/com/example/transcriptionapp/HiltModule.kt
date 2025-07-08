@@ -39,9 +39,9 @@ object HiltModule {
     return Room.databaseBuilder(
       context.applicationContext,
       TranscriptionDatabase::class.java,
-      "transcription_database_name" // Replace with your actual database name
+      "transcription_database"
     )
-      .addMigrations(MIGRATION_1_2) // <--- ADD YOUR MIGRATION HERE
+      .addMigrations(MIGRATION_1_2)
       .build()
   }
 
