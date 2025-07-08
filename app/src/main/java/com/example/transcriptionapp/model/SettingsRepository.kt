@@ -42,4 +42,16 @@ class SettingsRepository @Inject constructor(private val dataStore: DataStore<Us
   suspend fun setDynamicColor(dynamicColor: Boolean) {
     dataStore.updateData { currentSettings -> currentSettings.copy(dynamicColor = dynamicColor) }
   }
+
+  suspend fun setSilenceTrimming(enableSilenceTrimming: Boolean) {
+    dataStore.updateData { currentSettings -> currentSettings.copy(enableSilenceTrimming = enableSilenceTrimming) }
+  }
+
+  suspend fun setSilenceThreshold(silenceThresholdDb: Int) {
+    dataStore.updateData { currentSettings -> currentSettings.copy(silenceThresholdDb = silenceThresholdDb) }
+  }
+
+  suspend fun setSilenceDuration(silenceDurationSeconds: Float) {
+    dataStore.updateData { currentSettings -> currentSettings.copy(silenceDurationSeconds = silenceDurationSeconds) }
+  }
 }

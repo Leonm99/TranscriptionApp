@@ -91,19 +91,15 @@ class ShareActivity : ComponentActivity() {
       }
     }
 
+    // Handle intent immediately if this is a fresh start
     if (savedInstanceState == null) {
-      CoroutineScope(Dispatchers.IO).launch {
-        delay(1000)
-        handleIntent(intent)
-      }
+      handleIntent(intent)
     }
 
     lifecycleScope.launch {
       bottomSheetViewModel.closeApp.collect { shouldClose ->
         if (shouldClose) {
-          //finishAffinity() // Close the app
-          finish()
-          exitProcess(0)
+          finishAffinity() // Properly close the app and its task
         }
       }
     }

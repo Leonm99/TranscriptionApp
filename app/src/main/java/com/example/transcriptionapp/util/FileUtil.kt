@@ -75,10 +75,26 @@ object FileUtils {
   }
 
   fun convertToMP3(inputUri: Uri, context: Context): File? {
+    return convertToMP3WithSilenceTrimming(
+      inputUri = inputUri,
+      context = context,
+      enableSilenceTrimming = false
+    )
+  }
+
+  fun convertToMP3WithSilenceTrimming(
+    inputUri: Uri,
+    context: Context,
+    enableSilenceTrimming: Boolean = true,
+    silenceThresholdDb: Int = -40,
+    silenceDurationSeconds: Float = 2.0f
+  ): File? {
     Log.d("FileUtil", "Input URI: ${inputUri.path}")
+    Log.d("FileUtil", "Silence trimming enabled: $enableSilenceTrimming")
+    
     // Check if the input is already an MP3 file
     val mimeType = context.contentResolver.getType(inputUri)
-    if (mimeType == "audio/mp3") {
+    if (mimeType == "audio/mp3" && !enableSilenceTrimming) {
       return getFileFromUri(inputUri, context)
     }
 
@@ -87,8 +103,17 @@ object FileUtils {
       val outputPath =
         File("${context.cacheDir}/temp", inputUri.lastPathSegment + ".mp3").absolutePath
 
-      // FFmpeg command to convert the audio file to MP3, optimized for Whisper transcription
-      val command = "-y -i ${inputUri.path} -ac 1 -ar 16000 -c:a libmp3lame -b:a 64k $outputPath"
+      // Build FFmpeg command with optional silence removal
+      val command = if (enableSilenceTrimming) {
+        // FFmpeg command with silence removal filter
+        val silenceFilter = "silenceremove=stop_periods=-1:stop_duration=$silenceDurationSeconds:stop_threshold=${silenceThresholdDb}dB"
+        "-y -i ${inputUri.path} -af $silenceFilter -ac 1 -ar 16000 -c:a libmp3lame -b:a 64k $outputPath"
+      } else {
+        // Original FFmpeg command without silence removal
+        "-y -i ${inputUri.path} -ac 1 -ar 16000 -c:a libmp3lame -b:a 64k $outputPath"
+      }
+
+      Log.d("FileUtil", "FFmpeg command: $command")
 
       // Execute the FFmpeg command using FFmpegKit
       val session = FFmpegKit.execute(command)
@@ -98,13 +123,20 @@ object FileUtils {
 
       // Check if the conversion was successful
       if (ReturnCode.isSuccess(returnCode)) {
-        File(outputPath)
+        val outputFile = File(outputPath)
+        if (enableSilenceTrimming) {
+          Log.d("FileUtil", "Successfully converted and trimmed silence from audio file")
+        } else {
+          Log.d("FileUtil", "Successfully converted audio file")
+        }
+        outputFile
       } else {
-        Log.d("FileUtil", "Failed to convert file to MP3: $returnCode")
+        Log.e("FileUtil", "Failed to convert file to MP3: $returnCode")
+        Log.e("FileUtil", "FFmpeg logs: ${session.allLogsAsString}")
         null
       }
     } catch (e: Exception) {
-      Log.d("FileUtil", "Error converting file to MP3", e)
+      Log.e("FileUtil", "Error converting file to MP3", e)
       null
     }
   }

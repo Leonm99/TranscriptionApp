@@ -104,6 +104,14 @@ constructor(
     initialValue = firebaseAuth.currentUser?.email
   )
 
+  val userFirebaseId: StateFlow<String?> = currentUser.map { firebaseUser ->
+    firebaseUser?.uid
+  }.stateIn(
+    scope = viewModelScope,
+    started = SharingStarted.WhileSubscribed(5000),
+    initialValue = firebaseAuth.currentUser?.uid
+  )
+
   private val _showDialog = MutableStateFlow(false)
   var showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
@@ -178,5 +186,17 @@ constructor(
 
   fun setDynamicColor(dynamicColor: Boolean) {
     viewModelScope.launch(Dispatchers.IO) { settingsRepository.setDynamicColor(dynamicColor) }
+  }
+
+  fun setSilenceTrimming(enableSilenceTrimming: Boolean) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setSilenceTrimming(enableSilenceTrimming) }
+  }
+
+  fun setSilenceThreshold(silenceThresholdDb: Int) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setSilenceThreshold(silenceThresholdDb) }
+  }
+
+  fun setSilenceDuration(silenceDurationSeconds: Float) {
+    viewModelScope.launch(Dispatchers.IO) { settingsRepository.setSilenceDuration(silenceDurationSeconds) }
   }
 }

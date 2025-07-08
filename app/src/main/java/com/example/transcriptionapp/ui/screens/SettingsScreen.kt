@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.GeneratingTokens
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -77,6 +78,8 @@ import coil.request.ImageRequest
 import com.alorma.compose.settings.ui.SettingsCheckbox
 import com.alorma.compose.settings.ui.SettingsMenuLink
 import com.alorma.compose.settings.ui.SettingsSwitch
+import com.alorma.compose.settings.ui.base.internal.SettingsTileColors
+import com.alorma.compose.settings.ui.base.internal.SettingsTileDefaults
 import com.example.transcriptionapp.R
 import com.example.transcriptionapp.ui.components.DeleteDialog
 import com.example.transcriptionapp.ui.components.LanguageDialog
@@ -145,6 +148,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
           val userDisplayNameState by viewModel.userDisplayName.collectAsStateWithLifecycle()
           val userProfilePictureUrlState by viewModel.userProfilePictureUrl.collectAsStateWithLifecycle()
           val userEmailState by viewModel.userEmail.collectAsStateWithLifecycle()
+          val userFirebaseIdState by viewModel.userFirebaseId.collectAsStateWithLifecycle()
 
           if (isSignedIn) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -182,6 +186,14 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                       color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                   }
+                  userFirebaseIdState?.let { firebaseId ->
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                      text = "Firebase ID: $firebaseId",
+                      style = MaterialTheme.typography.bodySmall,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                  }
                 }
               }
               Spacer(modifier = Modifier.height(16.dp))
@@ -197,7 +209,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                     tint = MaterialTheme.colorScheme.error
                   )
                 },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                colors = SettingsTileDefaults.colors(containerColor = Color.Transparent)
               )
             }
           } else { // Logged out state
@@ -257,7 +269,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                 tint = MaterialTheme.colorScheme.primary
               )
             },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            colors = SettingsTileDefaults.colors(containerColor = Color.Transparent)
           )
           SettingsDivider()
           SettingsMenuLink(
@@ -271,7 +283,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                 tint = MaterialTheme.colorScheme.primary
               )
             },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            colors = SettingsTileDefaults.colors(containerColor = Color.Transparent)
           )
         }
       }
@@ -290,7 +302,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                 tint = MaterialTheme.colorScheme.primary
               )
             },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            colors = SettingsTileDefaults.colors(containerColor = Color.Transparent),
           )
           SettingsDivider()
           SettingsCheckbox(
@@ -305,7 +317,22 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                 tint = MaterialTheme.colorScheme.primary
               )
             },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            colors = SettingsTileDefaults.colors(containerColor = Color.Transparent),
+          )
+          SettingsDivider()
+          SettingsSwitch(
+            state = settingsState.enableSilenceTrimming,
+            title = { Text(text = "Remove Long Silences") },
+            subtitle = { Text(text = "Automatically trim silence before transcription to reduce costs") },
+            icon = {
+              Icon(
+                imageVector = Icons.Default.VolumeOff,
+                contentDescription = "Silence Trimming",
+                tint = MaterialTheme.colorScheme.primary
+              )
+            },
+            colors = SettingsTileDefaults.colors(containerColor = Color.Transparent),
+            onCheckedChange = { viewModel.setSilenceTrimming(it) }
           )
 
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -321,7 +348,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                   tint = MaterialTheme.colorScheme.primary
                 )
               },
-              colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+              colors = SettingsTileDefaults.colors(containerColor = Color.Transparent),
               onCheckedChange = {
                 viewModel.setDynamicColor(it)
                 showToast(context, "Restart app to apply changes.", true)
@@ -344,7 +371,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                 tint = MaterialTheme.colorScheme.error
               )
             },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            colors = SettingsTileDefaults.colors(containerColor = Color.Transparent),
           )
         }
       }
@@ -404,7 +431,7 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: SettingsViewModel, isSign
                     tint = MaterialTheme.colorScheme.primary
                   )
                 },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                colors = SettingsTileDefaults.colors(containerColor = Color.Transparent),
                 onCheckedChange = { viewModel.setMockApi(it) },
                 modifier = Modifier.padding(horizontal = 0.dp)
               )

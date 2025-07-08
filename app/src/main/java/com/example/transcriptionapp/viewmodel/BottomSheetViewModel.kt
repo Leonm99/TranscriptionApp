@@ -17,7 +17,7 @@ import com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.model.database.Transcription
 import com.example.transcriptionapp.util.FileUtils // Ensure this is your FileUtils with hashing
 import com.example.transcriptionapp.util.FileUtils.clearTempDir
-import com.example.transcriptionapp.util.FileUtils.convertToMP3
+import com.example.transcriptionapp.util.FileUtils.convertToMP3WithSilenceTrimming
 import com.example.transcriptionapp.util.formatTimestamp
 import com.example.transcriptionapp.util.showToast
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +28,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -87,7 +88,7 @@ constructor(
 
   enum class ProcessingStep {
     HASHING_AND_CHECKING, // For original file hashing and DB check
-    CONVERTING,           // For MP3 conversion
+    CONVERTING,           // For MP3 conversion and silence trimming
     TRANSCRIPTION,        // For API call
   }
 
@@ -264,16 +265,18 @@ constructor(
     } else {
       _isLoading.value = false
       showToast(context, if (transcribeDuplicates) "No files selected for transcription." else "No new files to transcribe.")
-      saveAfterEnd == false
+      toggleBottomSheet(false)
     }
     pendingAudioSelectionsWithOriginalHashes.clear()
   }
 
   fun dismissDuplicateWarning() {
+    val warningList = _showDuplicateFileWarning.value
     _showDuplicateFileWarning.value = emptyList()
-    // Default action: skip duplicates, effectively the same as "Skip These"
+    
+    // Default action: skip duplicates
     val filesToActuallyProcess = pendingAudioSelectionsWithOriginalHashes.filter { pendingFile ->
-      pendingFile.hash == null || _showDuplicateFileWarning.value.none { duplicateFile -> duplicateFile.hash == pendingFile.hash }
+      pendingFile.hash == null || warningList.none { duplicateFile -> duplicateFile.hash == pendingFile.hash }
     }
 
     filesForCurrentOperation.clear()
@@ -283,17 +286,13 @@ constructor(
     if (filesForCurrentOperation.isEmpty()) {
       showToast(context, "No new files to transcribe.")
       toggleBottomSheet(false)
+      _isLoading.value = false
     } else {
-      // If there are non-duplicates, the user might expect them to be processed or to hit transcribe again.
-      // For now, they are in filesForCurrentOperation. If isLoading is false, the UI might need a "start" button.
-      // Or, we could automatically start if filesForCurrentOperation is not empty.
-      // Let's assume for now the user will re-initiate if needed, or we just keep them staged.
-      // The current flow might auto-start if isLoading is set to true and transcribeAudiosInternal is called.
-      // For safety, let's just clear the pending selections and not auto-start.
-      _isLoading.value = false // Ensure loading is off if we don't auto-start
+      // Auto-start transcription for non-duplicate files
+      _isLoading.value = true
+      transcribeAudiosInternal()
     }
     pendingAudioSelectionsWithOriginalHashes.clear()
-    _isLoading.value = false
   }
 
   private fun transcribeAudiosInternal() {
@@ -326,10 +325,21 @@ constructor(
       val mapConvertedFileToOriginalHash = mutableMapOf<File, String?>()
 
       try {
+        // Get current user settings for silence trimming
+        val userSettings = settingsRepository.userPreferencesFlow.first()
+        
         currentBatchFilesToProcess.forEachIndexed { index, audioFileWithOriginalHash ->
           _currentAudioIndex.value = index + 1
           Log.d(TAG, "Converting: ${audioFileWithOriginalHash.originalFileName}")
-          val convertedFile = withContext(Dispatchers.IO) { convertToMP3(audioFileWithOriginalHash.uri, context) }
+          val convertedFile = withContext(Dispatchers.IO) { 
+            convertToMP3WithSilenceTrimming(
+              inputUri = audioFileWithOriginalHash.uri,
+              context = context,
+              enableSilenceTrimming = userSettings.enableSilenceTrimming,
+              silenceThresholdDb = userSettings.silenceThresholdDb,
+              silenceDurationSeconds = userSettings.silenceDurationSeconds
+            )
+          }
           if (convertedFile != null) {
             convertedFilesForApi.add(convertedFile)
             // It's good practice to also hash the converted file if you need to verify what was sent to API

@@ -20,11 +20,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.transcriptionapp.model.GoogleAuthClient
 import com.example.transcriptionapp.model.SettingsRepository
+import com.example.transcriptionapp.model.UserPreferences
 import com.example.transcriptionapp.ui.components.AudioPermissionTextProvider
 import com.example.transcriptionapp.ui.components.PermissionDialog
 import com.example.transcriptionapp.ui.screens.SettingsScreen
@@ -42,11 +44,9 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-  val bottomSheetViewModel: BottomSheetViewModel by viewModels<BottomSheetViewModel>()
-  val settingsViewModel: SettingsViewModel by viewModels<SettingsViewModel>()
+  private val bottomSheetViewModel: BottomSheetViewModel by viewModels()
+  private val settingsViewModel: SettingsViewModel by viewModels()
   @Inject lateinit var settingsRepository: SettingsRepository
-  var dynamicColor: Boolean = true
-  val context = this
   @Inject lateinit var googleAuthClient: GoogleAuthClient
 
   private val permissionsToRequest =
@@ -59,23 +59,21 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    CoroutineScope(Dispatchers.IO).launch {
-      settingsRepository.userPreferencesFlow.collect { userPreferences ->
-        dynamicColor = userPreferences.dynamicColor
-      }
-    }
     enableEdgeToEdge()
     setContent {
       // Get Firebase Auth instance
       val auth = remember { FirebaseAuth.getInstance() }
 
       // State to hold the current signed-in status
-      // Use rememberSaveable if you want to preserve this across configuration changes,
-      // though auth state is usually fetched fresh anyway.
       var isSignedIn by remember { mutableStateOf(auth.currentUser != null) }
 
+      // Collect dynamic color setting from repository
+      val userPreferences by settingsRepository.userPreferencesFlow.collectAsStateWithLifecycle(
+        initialValue = UserPreferences()
+      )
+
       // Effect to listen to auth state changes
-      DisposableEffect(auth) { // Keyed on 'auth' instance
+      DisposableEffect(auth) {
         val authStateListener =
             FirebaseAuth.AuthStateListener { firebaseAuth ->
               val user = firebaseAuth.currentUser
@@ -86,11 +84,10 @@ class MainActivity : ComponentActivity() {
             }
         auth.addAuthStateListener(authStateListener)
 
-        // Don't forget to remove the listener when the composable leaves the screen
         onDispose { auth.removeAuthStateListener(authStateListener) }
       }
 
-      TranscriptionAppTheme(dynamicColor = dynamicColor) {
+      TranscriptionAppTheme(dynamicColor = userPreferences.dynamicColor) {
         val navController = rememberNavController()
         val dialogQueue = bottomSheetViewModel.visiblePermissionDialogQueue
 

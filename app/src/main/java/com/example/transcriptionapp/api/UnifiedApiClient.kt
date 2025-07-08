@@ -12,6 +12,7 @@ import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.auth.FirebaseAuth
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -41,6 +42,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import android.media.MediaMetadataRetriever
 import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -145,6 +147,24 @@ class UnifiedApiClient @Inject constructor(
         }
     }
 
+    // Helper function to get Firebase ID token
+    private suspend fun getFirebaseIdToken(): String? {
+        return try {
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            if (currentUser != null) {
+                val idTokenResult = currentUser.getIdToken(false).await() // false = don't force refresh
+                Log.d("UnifiedApiClient", "Firebase ID token retrieved")
+                idTokenResult.token
+            } else {
+                Log.e("UnifiedApiClient", "No Firebase user logged in.")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("UnifiedApiClient", "Error getting Firebase ID token", e)
+            null
+        }
+    }
+
     override suspend fun transcribe(audioFile: File): Result<String> {
         if (!isNetworkAvailable(context)) return Result.failure(Exception("No network connection available"))
 
@@ -180,14 +200,26 @@ class UnifiedApiClient @Inject constructor(
     private suspend fun transcribeWithHttpInternal(audioFile: File): Result<String> {
         if (firebaseFunctionHttpUrl.isBlank()) return Result.failure(Exception("Firebase Function URL not configured for HTTP transcription."))
 
-        val appCheckToken = getAppCheckToken() // Get the token
+        val appCheckToken = getAppCheckToken() // Get the App Check token
+        val idToken = getFirebaseIdToken() // Get the Firebase ID token
+
         if (appCheckToken == null) {
             return Result.failure(Exception("Failed to retrieve App Check token for transcription."))
+        }
+        if (idToken == null) {
+            return Result.failure(Exception("Failed to retrieve Firebase ID token for transcription. User not authenticated?"))
         }
 
         return withContext(Dispatchers.IO) {
             try {
                 val mediaTypeAudio = contentTypeForExtension(audioFile.extension)
+
+                // Get audio duration
+                val retriever = MediaMetadataRetriever()
+                retriever.setDataSource(audioFile.absolutePath)
+                val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                val audioDurationSeconds = durationStr?.toLongOrNull()?.div(1000.0) ?: 0.0
+                retriever.release()
 
                 val response = ktorHttpClient.submitFormWithBinaryData(
                     url = firebaseFunctionHttpUrl.trim(),
@@ -197,18 +229,43 @@ class UnifiedApiClient @Inject constructor(
                             append(HttpHeaders.ContentDisposition, "filename=\"${audioFile.name}\"")
                         })
                         append("model", "whisper-1")
+                        append("audio_duration_seconds", audioDurationSeconds.toString()) // Add duration
                     }
                 ) {
                     header("X-Firebase-AppCheck", appCheckToken)
+                    header("Authorization", "Bearer $idToken") // Add Firebase ID token
                 }
 
                 val responseBodyString = response.bodyAsText()
                 if (!response.status.isSuccess()) {
                     Log.e("UnifiedApiClient", "Whisper failed via HTTP (Ktor): ${response.status.value} - $responseBodyString")
+                    
+                    // Parse and provide user-friendly error messages
+                    val userFriendlyError = when (response.status.value) {
+                        401 -> "Authentication failed. Please sign in again."
+                        403 -> "Access denied. Please check your account permissions."
+                        429 -> {
+                            // Try to extract the specific limit message from the response
+                            val limitMessage = responseBodyString.takeIf { it.isNotBlank() } ?: "Too many requests. Please try again later."
+                            "Usage limit exceeded: $limitMessage"
+                        }
+                        500 -> "Server error occurred. Please try again."
+                        503 -> "Service temporarily unavailable. Please try again later."
+                        else -> {
+                            // Try to extract error message from response body if it's a readable error
+                            if (responseBodyString.isNotBlank() && responseBodyString.length < 200) {
+                                "Transcription failed: $responseBodyString"
+                            } else {
+                                "Transcription failed with error code ${response.status.value}"
+                            }
+                        }
+                    }
+                    
                     if (response.status.value == 401 || response.status.value == 403) {
                         Log.e("UnifiedApiClient", "App Check verification likely failed. Ensure App Check is set up correctly in Firebase Console and client.")
                     }
-                    return@withContext Result.failure(Exception("Transcription failed (HTTP Ktor): ${response.status.value} - ${responseBodyString ?: "Unknown error"}"))
+                    
+                    return@withContext Result.failure(Exception(userFriendlyError))
                 }
 
                 val transcriptionText = jsonParser.parseToJsonElement(responseBodyString).jsonObject["text"]?.jsonPrimitive?.contentOrNull
@@ -234,9 +291,14 @@ class UnifiedApiClient @Inject constructor(
             return Result.failure(Exception("Firebase Function URL not configured for $clientOperation."))
         }
 
-        val appCheckToken = getAppCheckToken() // Get the token
+        val appCheckToken = getAppCheckToken() // Get the App Check token
+        val idToken = getFirebaseIdToken() // Get the Firebase ID token
+
         if (appCheckToken == null) {
             return Result.failure(Exception("Failed to retrieve App Check token for $clientOperation."))
+        }
+        if (idToken == null) {
+            return Result.failure(Exception("Failed to retrieve Firebase ID token for $clientOperation. User not authenticated?"))
         }
 
         return withContext(Dispatchers.IO) {
@@ -256,15 +318,39 @@ class UnifiedApiClient @Inject constructor(
                     contentType(ContentType.Application.Json)
                     setBody(chatRequestBody)
                     header("X-Firebase-AppCheck", appCheckToken)
+                    header("Authorization", "Bearer $idToken") // Add Firebase ID token
                 }
 
                 val responseBodyString = response.bodyAsText()
                 if (!response.status.isSuccess()) {
                     Log.e("UnifiedApiClient", "$clientOperation failed via HTTP (Ktor): ${response.status.value} - $responseBodyString")
+                    
+                    // Parse and provide user-friendly error messages for chat operations
+                    val userFriendlyError = when (response.status.value) {
+                        401 -> "Authentication failed. Please sign in again."
+                        403 -> "Access denied. Please check your account permissions."
+                        429 -> {
+                            // Try to extract the specific limit message from the response
+                            val limitMessage = responseBodyString.takeIf { it.isNotBlank() } ?: "Too many requests. Please try again later."
+                            "Usage limit exceeded: $limitMessage"
+                        }
+                        500 -> "Server error occurred. Please try again."
+                        503 -> "Service temporarily unavailable. Please try again later."
+                        else -> {
+                            // Try to extract error message from response body if it's a readable error
+                            if (responseBodyString.isNotBlank() && responseBodyString.length < 200) {
+                                "$clientOperation failed: $responseBodyString"
+                            } else {
+                                "$clientOperation failed with error code ${response.status.value}"
+                            }
+                        }
+                    }
+                    
                     if (response.status.value == 401 || response.status.value == 403) {
                         Log.e("UnifiedApiClient", "App Check verification likely failed for $clientOperation. Ensure App Check is set up correctly in Firebase Console and client.")
                     }
-                    return@withContext Result.failure(Exception("$clientOperation failed (HTTP Ktor): ${response.status.value} - $responseBodyString"))
+                    
+                    return@withContext Result.failure(Exception(userFriendlyError))
                 }
 
                 val openAIResponse = try {

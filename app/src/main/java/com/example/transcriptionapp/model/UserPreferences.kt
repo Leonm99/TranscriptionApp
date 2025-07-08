@@ -23,7 +23,10 @@ data class UserPreferences(
   val selectedSummaryProvider: ProviderType = ProviderType.OPEN_AI,
   val autoSave: Boolean = true,
   val mockApi: Boolean = false,
-  val dynamicColor: Boolean = true
+  val dynamicColor: Boolean = true,
+  val enableSilenceTrimming: Boolean = true,
+  val silenceThresholdDb: Int = -40,
+  val silenceDurationSeconds: Float = 2.0f
 )
 
 object UserPreferencesSerializer : Serializer<UserPreferences> {
