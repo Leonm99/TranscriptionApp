@@ -3,8 +3,8 @@ package com.example.transcriptionapp.util
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.arthenica.ffmpegkit.FFmpegKit
-import com.arthenica.ffmpegkit.ReturnCode
+import com.antonkarpenko.ffmpegkit.FFmpegKit
+import com.antonkarpenko.ffmpegkit.ReturnCode
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream

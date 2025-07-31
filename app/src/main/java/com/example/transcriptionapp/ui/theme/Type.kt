@@ -13,9 +13,9 @@ val provider =
     certificates = R.array.com_google_android_gms_fonts_certs,
   )
 
-val bodyFontFamily = FontFamily(Font(googleFont = GoogleFont("Roboto"), fontProvider = provider))
+val bodyFontFamily = FontFamily(Font(googleFont = GoogleFont("Nunito"), fontProvider = provider)) //Roboto, Nunito,
 
-val displayFontFamily = FontFamily(Font(googleFont = GoogleFont("Roboto"), fontProvider = provider))
+val displayFontFamily = FontFamily(Font(googleFont = GoogleFont("Nunito"), fontProvider = provider))
 
 // Default Material 3 typography values
 val baseline = Typography()
