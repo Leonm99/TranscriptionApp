@@ -128,9 +128,14 @@ constructor(
       try {
         val signedIn = googleAuthClient.signIn(activity)
         if (signedIn) {
-          Log.i(TAG, "Sign-in successful from ViewModel perspective.")
+          Log.i(TAG, "Sign-in successful")
           withContext(Dispatchers.Main) {
-            showToast(context, "Signed in")
+            showToast(context, "Signed in successfully")
+          }
+        } else {
+          Log.w(TAG, "Sign-in failed")
+          withContext(Dispatchers.Main) {
+            showToast(context, "Sign-in failed. Please try again.")
           }
         }
       } catch (e: NoGoogleAccountFoundException) {

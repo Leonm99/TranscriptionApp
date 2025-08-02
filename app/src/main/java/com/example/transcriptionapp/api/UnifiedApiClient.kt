@@ -15,6 +15,7 @@ import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.auth.FirebaseAuth
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
@@ -93,6 +94,11 @@ class UnifiedApiClient @Inject constructor(
                 writeTimeout(60, TimeUnit.SECONDS)
             }
         }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60000
+            connectTimeoutMillis = 60000
+            socketTimeoutMillis = 60000
+        }
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
@@ -115,7 +121,7 @@ class UnifiedApiClient @Inject constructor(
     private var transcriptionProvider: ProviderType = ProviderType.OPEN_AI
     private var summarizationProvider: ProviderType = ProviderType.OPEN_AI
     private var openAiModelForChat: String = "gpt-4o-mini"
-    private val geminiModelName: String = "gemini-2.0-flash-lite-001"
+    private val geminiModelName: String = "gemini-2.5-flash-lite"
 
     private val jsonParser = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -390,22 +396,28 @@ class UnifiedApiClient @Inject constructor(
                     .generativeModel(geminiModelName,
                         systemInstruction = content { text(prompt) })
 
-                contentResolver.openInputStream(audioUri)?.use { stream ->
+                val inputStream = contentResolver.openInputStream(audioUri)
+                if (inputStream == null) {
+                    return@withContext Result.failure(Exception("Failed to open audio file stream for Gemini SDK transcription."))
+                }
+                
+                inputStream.use { stream ->
                     val audioBytes = stream.readBytes()
                     val mimeType = contentTypeForExtension(audioFile.extension)
                     val response = model.generateContent(content { inlineData(audioBytes, mimeType) })
-                    response.text?.let {
-                        if (it.isNotBlank()) {
-                            return@withContext Result.success(it)
+                    val responseText = response.text
+                    if (responseText != null) {
+                        if (responseText.isNotBlank()) {
+                            return@withContext Result.success(responseText)
                         } else {
                             Log.e("UnifiedApiClient", "Gemini SDK transcription resulted in empty text.")
                             return@withContext Result.failure(Exception("Transcription failed (Gemini SDK): Empty response"))
                         }
-                    } ?: run {
+                    } else {
                         Log.e("UnifiedApiClient", "Gemini SDK transcription response was null. Full response: ${response.candidates}")
                         return@withContext Result.failure(Exception("Transcription failed (Gemini SDK): Null response text"))
                     }
-                } ?: return@withContext Result.failure(Exception("Failed to open audio file stream for Gemini SDK transcription."))
+                }
             } catch (e: Exception) {
                 Log.e("UnifiedApiClient", "Error during Gemini SDK transcription: ${e.message}", e)
                 Result.failure(Exception("Transcription failed (Gemini SDK): ${e.localizedMessage ?: "Unknown error"}"))

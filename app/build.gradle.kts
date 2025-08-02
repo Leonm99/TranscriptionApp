@@ -39,10 +39,8 @@ android {
     debug {
       isMinifyEnabled = false
       isShrinkResources = false
-
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-
-
+      // Remove ProGuard from debug builds to avoid class stripping issues
+      // proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
   compileOptions {
@@ -101,11 +99,11 @@ dependencies {
   implementation(libs.firebase.functions)
 
   // Ktor (Networking)
+  implementation(platform(libs.ktor.bom))
   implementation(libs.ktor.client.content.negotiation)
   implementation(libs.ktor.client.core)
   implementation(libs.ktor.client.logging)
   implementation(libs.ktor.client.okhttp)
-  implementation(libs.ktor.client.plugins)
   implementation(libs.ktor.serialization.kotlinx.json)
 
   // Kotlin Serialization

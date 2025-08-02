@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.transcriptionapp.api.ApiService
 import com.example.transcriptionapp.api.ApiServiceFactory
+import com.example.transcriptionapp.model.GoogleAuthClient
 import com.example.transcriptionapp.model.SettingsRepository
 import com.example.transcriptionapp.model.TranscriptionRepository
 import com.example.transcriptionapp.model.database.Transcription
@@ -56,6 +57,7 @@ constructor(
   private val transcriptionRepository: TranscriptionRepository,
   private val apiServiceFactory: ApiServiceFactory,
   @ApplicationContext private val context: Context,
+  private val googleAuthClient: GoogleAuthClient, // O
 ) : ViewModel() {
   val visiblePermissionDialogQueue = mutableStateListOf<String>()
   private val _isLoading = MutableStateFlow(false)
@@ -169,6 +171,15 @@ constructor(
   // Handles initial audio selection from user
   fun onAudioSelected(selectedUrisFromPicker: List<Uri>) {
     if (selectedUrisFromPicker.isEmpty()) return
+
+    if (!googleAuthClient.isSignedIn()) { // Or !isUserAuthenticated() if you create a helper
+      _transcriptionError.value = "Authentication required. Please sign in to transcribe audio."
+      _isLoading.value = false // Ensure loading state is reset
+      // Optionally, you might want to trigger a navigation to the sign-in screen
+      // _navigateToSignIn.value = true // (You'd need to define this StateFlow)
+      showToast(context, "Please sign in to use transcription.", true)
+      return // Stop further processing
+    }
 
     viewModelScope.launch {
       _isLoading.value = true
@@ -302,14 +313,13 @@ constructor(
       return
     }
 
-    // filesForCurrentOperation already contains AudioFileWithHash objects (original URI + original content hash)
-    val currentBatchFilesToProcess = filesForCurrentOperation.toList() // Work with a copy for this run
+    val currentBatchFilesToProcess = filesForCurrentOperation.toList()
 
     viewModelScope.launch {
       _lastAction.value = LastAction.TRANSCRIPTION
       _transcription.value = Transcription(id = 0, transcriptionText = "", summaryText = null, translationText = null, timestamp = "null", fileHash = null)
-      _transcriptionError.value = null
-      _isLoading.value = true // Ensure loading is true for this operation
+      _transcriptionError.value = null // Clear previous errors
+      _isLoading.value = true
       markAsFirstOpen()
       clearJustSummarizedFlag()
       clearJustTranslatedFlag()
@@ -318,20 +328,18 @@ constructor(
 
       _processingStep.value = ProcessingStep.CONVERTING
       _currentAudioIndex.value = 0
-      // _totalAudioCount is already set based on filesForCurrentOperation.size
 
       val convertedFilesForApi = mutableListOf<File>()
-      // We need to keep track of the original hash for the file that gets converted and sent
       val mapConvertedFileToOriginalHash = mutableMapOf<File, String?>()
+      val transcriptionErrors = mutableListOf<String>() // To collect specific errors
 
       try {
-        // Get current user settings for silence trimming
         val userSettings = settingsRepository.userPreferencesFlow.first()
-        
+
         currentBatchFilesToProcess.forEachIndexed { index, audioFileWithOriginalHash ->
           _currentAudioIndex.value = index + 1
           Log.d(TAG, "Converting: ${audioFileWithOriginalHash.originalFileName}")
-          val convertedFile = withContext(Dispatchers.IO) { 
+          val convertedFile = withContext(Dispatchers.IO) {
             convertToMP3WithSilenceTrimming(
               inputUri = audioFileWithOriginalHash.uri,
               context = context,
@@ -342,59 +350,98 @@ constructor(
           }
           if (convertedFile != null) {
             convertedFilesForApi.add(convertedFile)
-            // It's good practice to also hash the converted file if you need to verify what was sent to API
             val convertedFileHash = withContext(Dispatchers.IO) { FileUtils.getFileHash(convertedFile) }
             Log.d(TAG, "Converted ${audioFileWithOriginalHash.originalFileName} to ${convertedFile.name}, OriginalHash: ${audioFileWithOriginalHash.hash}, ConvertedHash: $convertedFileHash")
-            // Store the original hash associated with this specific converted file if needed later for multi-file batches
             mapConvertedFileToOriginalHash[convertedFile] = audioFileWithOriginalHash.hash
           } else {
             Log.e(TAG, "Failed to convert ${audioFileWithOriginalHash.originalFileName}")
-            // Optionally, you could collect errors here and report them
+            transcriptionErrors.add("Failed to convert: ${audioFileWithOriginalHash.originalFileName}")
           }
         }
 
-        if (convertedFilesForApi.isEmpty() && currentBatchFilesToProcess.isNotEmpty()) {
-          throw Exception("Failed to convert any audio files for transcription.")
+        if (convertedFilesForApi.isEmpty() && currentBatchFilesToProcess.isNotEmpty() && transcriptionErrors.isEmpty()) {
+          // If no files were converted but no specific conversion error was logged, add a generic one.
+          transcriptionErrors.add("Failed to convert any audio files for transcription.")
         }
 
+        if (transcriptionErrors.isNotEmpty() && convertedFilesForApi.isEmpty()) {
+          // If there are conversion errors and no files to transcribe, show these errors.
+          _transcriptionError.value = transcriptionErrors.joinToString("\n")
+          _isLoading.value = false
+          clearTempDir(context) // Ensure cleanup
+          return@launch // Stop further processing
+        }
+
+
         _processingStep.value = ProcessingStep.TRANSCRIPTION
-        _currentAudioIndex.value = 0 // Reset for transcription progress API calls
+        _currentAudioIndex.value = 0
 
         val transcriptionResultsTextList = mutableListOf<String>()
+        // Iterate through files that were successfully converted
         convertedFilesForApi.forEachIndexed { index, apiReadyFile ->
           _currentAudioIndex.value = index + 1
           Log.d(TAG, "Transcribing (API call): ${apiReadyFile.name}")
           val result = withContext(Dispatchers.IO) { apiService.transcribe(apiReadyFile) }
-          result.getOrNull()?.let { transcriptionResultsTextList.add(it) }
+
+          result.onSuccess { text ->
+            transcriptionResultsTextList.add(text)
+          }.onFailure { exception ->
+            // Capture the specific error message from the API client
+            val errorMessage = exception.message ?: "Transcription failed for ${apiReadyFile.name}"
+            Log.e(TAG, "API Transcription Error for ${apiReadyFile.name}: $errorMessage", exception)
+            transcriptionErrors.add(errorMessage)
+          }
         }
+
+        // Consolidate transcription results
         val finalTranscriptionText = transcriptionResultsTextList.joinToString("\n\n")
 
-
         if (finalTranscriptionText.isNotBlank()) {
-          // Determine which ORIGINAL HASH to save.
-          // If batching, typically the hash of the first successfully processed file in the batch.
-          // Or, if each file gets its own transcription record, this logic would be different.
-          // For now, using the original hash of the first file in the *current batch* that was *intended* for processing.
-          val primaryOriginalHashForRecord = currentBatchFilesToProcess.firstOrNull()?.hash
+          val primaryOriginalHashForRecord = currentBatchFilesToProcess.firstOrNull { audioFile ->
+            // Find the original hash corresponding to the first *successfully* transcribed file
+            // This logic might need adjustment if you only want a hash if ALL files succeed.
+            // For now, let's assume the first file in the original batch is the primary reference.
+            // A more robust way would be to link hashes to successful transcriptions.
+            convertedFilesForApi.any { converted -> mapConvertedFileToOriginalHash[converted] == audioFile.hash }
+          }?.hash ?: currentBatchFilesToProcess.firstOrNull()?.hash // Fallback
 
           _transcription.value = _transcription.value.copy(
             transcriptionText = finalTranscriptionText,
             timestamp = formatTimestamp(System.currentTimeMillis()),
-            fileHash = primaryOriginalHashForRecord // STORE THE ORIGINAL CONTENT HASH
+            fileHash = primaryOriginalHashForRecord
           )
           Log.d(TAG, "Transcription successful. Original content hash for DB record: $primaryOriginalHashForRecord")
-          clearTempDir(context)
-        } else {
-          _transcriptionError.value = "Transcription failed or produced no text."
-          Log.e(TAG, "Transcription API call failed or produced no text for batch.")
+        }
+
+        // Handle errors after all attempts
+        if (transcriptionErrors.isNotEmpty()) {
+          // If there was some success, but also errors, decide how to present.
+          // For now, let's show all errors.
+          _transcriptionError.value = transcriptionErrors.joinToString("\n")
+          if (finalTranscriptionText.isBlank()) { // No successful transcription at all
+            Log.e(TAG, "All transcription attempts failed or produced no text. Errors: ${transcriptionErrors.joinToString()}")
+          } else {
+            Log.w(TAG, "Partial transcription success with errors: ${transcriptionErrors.joinToString()}")
+            // Optionally, you could still show the partial transcription and the errors.
+            // For now, _transcriptionError will display the issues.
+          }
+        } else if (finalTranscriptionText.isBlank() && convertedFilesForApi.isNotEmpty()) {
+          // This means API calls were made, succeeded in terms of Result.isSuccess, but returned no text.
+          _transcriptionError.value = "Transcription produced no text from the audio."
+          Log.e(TAG, "Transcription API calls succeeded but produced no text for the batch.")
         }
 
         _isLoading.value = false
+        clearTempDir(context)
 
-
-      } catch (e: Exception) {
-        Log.e(TAG, "Error in transcribeAudiosInternal", e)
-        _transcriptionError.value = e.message ?: "Error during transcription process"
+      } catch (e: Exception) { // Catch-all for unexpected errors during the whole process
+        Log.e(TAG, "Error in transcribeAudiosInternal's main try-catch", e)
+        // Prioritize already collected specific errors if any
+        if (transcriptionErrors.isNotEmpty()) {
+          _transcriptionError.value = transcriptionErrors.joinToString("\n") + "\nAdditional error: " + (e.message ?: "Unexpected error during transcription process")
+        } else {
+          _transcriptionError.value = e.message ?: "Unexpected error during transcription process"
+        }
         _isLoading.value = false
         clearTempDir(context)
       }

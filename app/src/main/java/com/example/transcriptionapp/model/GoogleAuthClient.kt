@@ -8,9 +8,12 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.example.transcriptionapp.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.auth.FirebaseAuth
@@ -23,107 +26,186 @@ import kotlin.coroutines.cancellation.CancellationException
 class GoogleAuthClient
 @Inject
 constructor(
-    @ApplicationContext private val context: Context, // This is ApplicationContext from Hilt
+    @ApplicationContext private val context: Context,
     private val firebaseAuth: FirebaseAuth
 ) {
 
   private val credentialManager = CredentialManager.create(context)
 
   fun isSignedIn(): Boolean {
-    if (firebaseAuth.currentUser != null) {
-      Log.i("GoogleAuthClient", "User already signed in")
-      return true
-    }
-    return false
+    return firebaseAuth.currentUser != null
   }
 
   /**
-   * Attempts to sign in the user.
-   *
-   * @param activity The current Activity, required to show system dialogs like account picker or to
-   *   launch the "Add Account" settings.
-   * @return Boolean true if sign-in was successful, false otherwise.
-   * @throws NoGoogleAccountFoundException if NoCredentialException is caught, allowing UI to react.
+   * Attempts to sign in the user using Credential Manager API
    */
   suspend fun signIn(activity: Activity): Boolean {
     if (isSignedIn()) {
+      Log.i(TAG, "User already signed in")
       return true
     }
 
-    try {
-      val result = buildCredentialRequest(activity)
-      return handleSignIn(result)
-    } catch (e: NoCredentialException) {
-      Log.w("GoogleAuthClient", "No credentials available. Possibly no Google accounts on device.")
-      // Specific exception to indicate to the caller that they should prompt to add an account
-      throw NoGoogleAccountFoundException("No Google accounts found on the device.", e)
-    } catch (e: Exception) {
+    val webClientId = context.getString(R.string.web_client_id)
+    Log.i(TAG, "Using web client ID: $webClientId")
+    
+    // Validate web client ID
+    if (webClientId.isEmpty() || webClientId == "YOUR_WEB_CLIENT_ID") {
+      Log.e(TAG, "Invalid web client ID configuration")
+      throw IllegalStateException("Web client ID is not properly configured")
+    }
 
-      Log.e("GoogleAuthClient", "Sign-in error")
-      if (e is CancellationException) throw e // Re-throw cancellation
-      return false
+    return try {
+      // First try with authorized accounts only (seamless sign-in)
+      val googleIdOption = GetGoogleIdOption.Builder()
+        .setFilterByAuthorizedAccounts(true)
+        .setServerClientId(webClientId)
+        .build()
+      
+      val request = GetCredentialRequest.Builder()
+        .addCredentialOption(googleIdOption)
+        .build()
+      
+      try {
+        Log.d(TAG, "Attempting sign-in with authorized accounts")
+        val result = credentialManager.getCredential(
+          context = activity,
+          request = request
+        )
+        handleSignIn(result)
+      } catch (e: NoCredentialException) {
+        Log.i(TAG, "No authorized accounts found, trying Sign In with Google")
+        handleNoCredentialException(activity)
+      }
+    } catch (e: GetCredentialException) {
+      Log.e(TAG, "GetCredentialException: ${e.message}", e)
+      handleCredentialException(e)
+    } catch (e: Exception) {
+      Log.e(TAG, "Unexpected error during sign-in: ${e.message}", e)
+      if (e is CancellationException) throw e
+      false
+    }
+  }
+
+  private suspend fun handleNoCredentialException(activity: Activity): Boolean {
+    return try {
+      val webClientId = context.getString(R.string.web_client_id)
+      Log.i(TAG, "Building Sign In with Google option with client ID: $webClientId")
+      
+      val signInWithGoogleOption = GetSignInWithGoogleOption
+        .Builder(serverClientId = webClientId)
+        .build()
+      
+      val request = GetCredentialRequest.Builder()
+        .addCredentialOption(signInWithGoogleOption)
+        .build()
+      
+      Log.d(TAG, "Attempting Sign In with Google")
+      val result = credentialManager.getCredential(
+        context = activity,
+        request = request
+      )
+      handleSignIn(result)
+    } catch (e: Exception) {
+      Log.e(TAG, "Sign In with Google failed: ${e.message}", e)
+      
+      // Check if this is a configuration issue
+      if (e.message?.contains("Account reauth failed") == true) {
+        Log.e(TAG, "Account reauth failed - this might indicate:")
+        Log.e(TAG, "1. OAuth client ID configuration issue")
+        Log.e(TAG, "2. Google account needs re-authentication")
+        Log.e(TAG, "3. App not properly registered with Google")
+        Log.e(TAG, "4. SHA-1 fingerprint mismatch in Google Console")
+      }
+      
+      if (e is GetCredentialException) {
+        handleCredentialException(e)
+      } else {
+        if (e is CancellationException) throw e
+        false
+      }
     }
   }
 
   private suspend fun handleSignIn(result: GetCredentialResponse): Boolean {
-    val credential = result.credential
-
-    if (credential is CustomCredential &&
-        credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-      try {
-        val tokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-        Log.i("GoogleAuthClient", "Google ID Token Credential obtained for: ${tokenCredential.id}")
-        // Optionally log displayName, profilePictureUri if needed for debugging
-        tokenCredential.profilePictureUri
-
-        val authCredential = GoogleAuthProvider.getCredential(tokenCredential.idToken, null)
-        val authResult = firebaseAuth.signInWithCredential(authCredential).await()
-        Log.i("GoogleAuthClient", "Firebase sign-in successful: ${authResult.user != null}")
-        return authResult.user != null
-      } catch (e: GoogleIdTokenParsingException) {
-        Log.e("GoogleAuthClient", "Google ID Token parsing failed: ${e.message}")
+    // Handle the successfully returned credential.
+    when (val credential = result.credential) {
+      is CustomCredential -> {
+        if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+          try {
+            // Use googleIdTokenCredential and extract id to validate and authenticate on your server.
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+            
+            Log.i(TAG, "Received Google ID token for user: ${googleIdTokenCredential.id}")
+            
+            // Create Firebase credential and sign in
+            val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+            val authResult = firebaseAuth.signInWithCredential(firebaseCredential).await()
+            
+            val isSuccessful = authResult.user != null
+            Log.i(TAG, "Firebase authentication successful: $isSuccessful")
+            return isSuccessful
+            
+          } catch (e: GoogleIdTokenParsingException) {
+            Log.e(TAG, "Received an invalid google id token response", e)
+            return false
+          }
+        } else {
+          // Catch any unrecognized custom credential type here.
+          Log.e(TAG, "Unexpected type of credential: ${credential.type}")
+          return false
+        }
+      }
+      else -> {
+        // Catch any unrecognized credential type here.
+        Log.e(TAG, "Unexpected type of credential: ${credential::class.java.name}")
         return false
       }
-    } else {
-      Log.w(
-          "GoogleAuthClient",
-          "Credential is not of type GoogleIdTokenCredential. Type: ${credential.type}")
-      return false
     }
   }
 
-  private suspend fun buildCredentialRequest(activity: Activity): GetCredentialResponse {
-    val serverClientId = context.getString(R.string.web_client_id)
-    if (serverClientId.isEmpty() || serverClientId == "YOUR_WEB_CLIENT_ID") {
-      Log.e("GoogleAuthClient", "Web client ID is not configured correctly in strings.xml.")
-      // Potentially throw a more specific configuration error here
-      // For now, it will likely fail in getCredential if the ID is invalid.
+  private fun handleCredentialException(e: GetCredentialException): Boolean {
+    when (e) {
+      is NoCredentialException -> {
+        // The user must create a credential or sign in to an existing one.
+        Log.w(TAG, "No credential available. User needs to create or sign in to an account.")
+        throw NoGoogleAccountFoundException(
+          "No Google accounts found. Please add a Google account in Settings > Accounts.",
+          e
+        )
+      }
+      is GetCredentialCancellationException -> {
+        // User canceled the sign-in flow or account reauth failed
+        Log.i(TAG, "Sign-in was canceled by user or account reauth failed")
+        return false
+      }
+      else -> {
+        // Handle other credential exceptions
+        Log.e(TAG, "Credential exception: ${e.javaClass.simpleName} - ${e.message}", e)
+        return false
+      }
     }
-    Log.i("GoogleAuthClient", "Using Server Client ID: $serverClientId")
-
-    val googleIdOption =
-        GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
-            .setServerClientId(serverClientId)
-            .setAutoSelectEnabled(
-                false) // Set to true if you want to attempt auto sign-in for a single account
-            .build()
-
-    val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
-
-    Log.d("GoogleAuthClient", "Requesting credential from manager.")
-    // This is where the system UI (account picker) might be shown.
-    return credentialManager.getCredential(activity, request)
   }
 
   suspend fun signOut() {
     try {
       firebaseAuth.signOut()
       credentialManager.clearCredentialState(ClearCredentialStateRequest())
-      Log.i("GoogleAuthClient", "User signed out successfully.")
+      Log.i(TAG, "User signed out successfully")
     } catch (e: Exception) {
-      Log.i("GoogleAuthClient", "Error during sign out: ${e.message}")
-      // Optionally, rethrow or handle as needed
+      Log.e(TAG, "Error during sign out: ${e.message}", e)
+    }
+  }
+
+  /**
+   * Refreshes the credential manager state. Call this after the user adds a Google account
+   * to ensure the credential manager recognizes the new account.
+   */
+  suspend fun refreshCredentialState() {
+    try {
+      credentialManager.clearCredentialState(ClearCredentialStateRequest())
+      Log.i(TAG, "Credential state refreshed successfully")
+    } catch (e: Exception) {
+      Log.w(TAG, "Error refreshing credential state: ${e.message}", e)
     }
   }
 
